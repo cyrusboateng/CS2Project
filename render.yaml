@@ -9,7 +9,7 @@ services:
       python manage.py collectstatic --noinput
       python manage.py migrate --noinput
     startCommand: |
-      gunicorn stroke_response.wsgi:application --bind=0.0.0.0:$PORT --workers=2 --threads=2 --worker-class=gthread --log-level=info --timeout=30 --keep-alive=5
+      gunicorn stroke_response.wsgi:application -c gunicorn.conf.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
