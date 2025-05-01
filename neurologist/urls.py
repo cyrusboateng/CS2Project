@@ -4,8 +4,9 @@ from . import views
 app_name = 'neurologist'
 
 urlpatterns = [
-    path('', views.dashboard, name='dashboard'),
-    path('history/', views.case_history, name='case_history'),
-    path('consultation/start/<int:patient_id>/', views.start_consultation, name='start_consultation'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('cases/', views.case_history, name='case_history'),
+    path('consultation/<int:patient_id>/start/', views.start_consultation, name='start_consultation'),
     path('consultation/<int:pk>/', views.consultation_detail, name='consultation_detail'),
+    path('consultation/<int:patient_id>/simulate/', views.simulate_diagnosis, name='simulate_diagnosis'),
 ]

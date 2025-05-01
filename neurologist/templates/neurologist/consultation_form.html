@@ -74,13 +74,18 @@
                         </div>
                         {% endfor %}
 
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
                             <a href="{% url 'neurologist:case_history' %}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Back to Cases
                             </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Complete Consultation
-                            </button>
+                            <div>
+                                <button type="button" class="btn btn-info me-2" id="simulateBtn">
+                                    <i class="fas fa-robot me-2"></i>Run Simulation
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Complete Consultation
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -109,6 +114,38 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('textarea').forEach(function(textarea) {
         textarea.classList.add('form-control');
     });
+});
+
+document.getElementById('simulateBtn').addEventListener('click', function() {
+    // Show loading state
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Simulating...';
+    
+    // Call simulation endpoint
+    fetch('{% url "neurologist:simulate_diagnosis" patient.id %}')
+        .then(response => response.json())
+        .then(data => {
+            // Update form fields with simulated data
+            document.getElementById('id_diagnosis').value = data.diagnosis;
+            document.getElementById('id_diagnosis_notes').value = data.diagnosis_notes;
+            document.getElementById('id_treatment_plan').value = data.treatment_plan;
+            document.getElementById('id_medications').value = data.medications;
+            document.getElementById('id_follow_up_notes').value = data.follow_up_notes;
+            
+            // Reset button state
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-robot me-2"></i>Run Simulation';
+            
+            // Show success message
+            alert('Simulation completed! Please review and adjust the suggested diagnosis and treatment plan.');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Reset button state
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-robot me-2"></i>Run Simulation';
+            alert('Error running simulation. Please try again.');
+        });
 });
 </script>
 {% endblock %}

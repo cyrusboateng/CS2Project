@@ -50,7 +50,29 @@ def register(request):
 @login_required
 def profile(request):
     profile = request.user.userprofile
-    return render(request, 'accounts/profile.html', {'profile': profile})
+    context = {'profile': profile}
+    
+    if profile.role == 'TECHNICIAN':
+        from technician.models import Patient
+        # Get patient counts by status
+        patients = Patient.objects.filter(technician=request.user)
+        context.update({
+            'draft_count': patients.filter(status='NEW').count(),
+            'submitted_count': patients.filter(status='SUBMITTED').count(),
+            'diagnosed_count': patients.filter(status='DIAGNOSED').count(),
+            'total_cases': patients.count()
+        })
+    elif profile.role == 'NEUROLOGIST':
+        from neurologist.models import Consultation
+        # Get consultation counts
+        consultations = Consultation.objects.filter(neurologist=request.user)
+        context.update({
+            'total_consultations': consultations.count(),
+            'completed_consultations': consultations.filter(status='COMPLETED').count(),
+            'in_progress_consultations': consultations.filter(status='IN_PROGRESS').count()
+        })
+    
+    return render(request, 'accounts/profile.html', context)
 
 @login_required
 def dashboard(request):

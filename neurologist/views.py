@@ -98,3 +98,61 @@ def consultation_detail(request, pk):
         'title': f'Consultation Details for {consultation.patient.first_name} {consultation.patient.last_name}'
     }
     return render(request, 'neurologist/consultation_detail.html', context)
+
+@login_required
+@user_passes_test(is_neurologist)
+def simulate_diagnosis(request, patient_id):
+    """Simulate a diagnosis based on patient data"""
+    from django.http import JsonResponse
+    import random
+    from datetime import date
+    
+    patient = get_object_or_404(Patient, pk=patient_id)
+    
+    # Calculate age from date of birth
+    today = date.today()
+    age = today.year - patient.date_of_birth.year - ((today.month, today.day) < (patient.date_of_birth.month, patient.date_of_birth.day))
+    
+    # Simple simulation logic based on patient data
+    symptoms = patient.chief_complaint.lower()
+    
+    # Basic simulation logic
+    if 'headache' in symptoms or 'confusion' in symptoms:
+        if random.random() < 0.3:  # 30% chance
+            diagnosis = 'HEMORRHAGIC'
+            notes = "Patient presents with symptoms suggestive of hemorrhagic stroke. Immediate CT scan recommended."
+        else:
+            diagnosis = 'ISCHEMIC'
+            notes = "Signs and symptoms consistent with ischemic stroke. Immediate neurological intervention required."
+    elif 'weakness' in symptoms or 'numbness' in symptoms:
+        if age > 60:
+            diagnosis = 'ISCHEMIC'
+            notes = "Given age and symptoms, likely ischemic stroke. Consider thrombolytic therapy if within window."
+        else:
+            diagnosis = 'TIA'
+            notes = "Considering age and presentation, possible TIA. Further monitoring needed."
+    else:
+        diagnosis = 'OTHER'
+        notes = "Symptoms non-specific. Further evaluation needed."
+    
+    # Generate treatment plan based on diagnosis
+    if diagnosis == 'HEMORRHAGIC':
+        treatment = "1. Immediate CT scan\n2. Blood pressure management\n3. Neurosurgery consult\n4. ICU admission"
+        medications = ["Antihypertensives", "Osmotic agents", "Anticonvulsants"]
+    elif diagnosis == 'ISCHEMIC':
+        treatment = "1. CT/MRI imaging\n2. Consider tPA if within window\n3. Stroke unit admission\n4. Early rehabilitation"
+        medications = ["Aspirin", "Statins", "Antihypertensives"]
+    elif diagnosis == 'TIA':
+        treatment = "1. Urgent carotid imaging\n2. Cardiac evaluation\n3. Risk factor modification\n4. Close follow-up"
+        medications = ["Antiplatelet agents", "Statins", "Blood pressure medication"]
+    else:
+        treatment = "1. Further diagnostic workup\n2. Neurological monitoring\n3. Symptom management"
+        medications = ["To be determined based on findings"]
+    
+    return JsonResponse({
+        'diagnosis': diagnosis,
+        'notes': notes,
+        'treatment_plan': treatment,
+        'medications': medications,
+        'age': age  # Include age in response for reference
+    })

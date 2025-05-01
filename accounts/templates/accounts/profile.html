@@ -3,50 +3,110 @@
 {% block title %}Profile - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h2 class="text-center">Profile</h2>
-            </div>
-            <div class="card-body">
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <h4>Account Information</h4>
-                        <p><strong>Username:</strong> {{ user.username }}</p>
-                        <p><strong>Member since:</strong> {{ user.date_joined|date:"F j, Y" }}</p>
-                        <p><strong>Last login:</strong> {{ user.last_login|date:"F j, Y H:i" }}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <h4>Role</h4>
-                        <div class="alert alert-info">
-                            <i class="fas {% if user.userprofile.role == 'TECHNICIAN' %}fa-user-md{% else %}fa-brain{% endif %} me-2"></i>
-                            {{ user.userprofile.get_role_display }}
-                            <div class="small text-muted mt-2">Role cannot be changed after registration</div>
-                        </div>
-                    </div>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center mb-0">Profile</h2>
                 </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
 
-                {% if user.userprofile.role %}
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <h4>Activity Summary</h4>
-                            {% if user.userprofile.role == 'TECHNICIAN' %}
-                                <p><strong>Cases submitted:</strong> {{ user.patient_set.count }}</p>
-                            {% elif user.userprofile.role == 'NEUROLOGIST' %}
-                                <p><strong>Cases reviewed:</strong> {{ user.consultation_set.count }}</p>
-                            {% endif %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>Account Information</h4>
+                            <p><strong>Username:</strong> {{ user.username }}</p>
+                            <p><strong>Member since:</strong> {{ user.date_joined|date:"F j, Y" }}</p>
+                            <p><strong>Last login:</strong> {{ user.last_login|date:"F j, Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Role</h4>
+                            <div class="alert alert-info">
+                                <i class="fas {% if profile.role == 'TECHNICIAN' %}fa-user-md{% else %}fa-brain{% endif %} me-2"></i>
+                                {{ profile.get_role_display }}
+                                <div class="small text-muted mt-2">Role cannot be changed after registration</div>
+                            </div>
                         </div>
                     </div>
-                {% endif %}
+
+                    {% if profile.role %}
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h4>Activity Summary</h4>
+                                {% if profile.role == 'TECHNICIAN' %}
+                                    <div class="row g-3">
+                                        <div class="col-md-6 col-lg-3">
+                                            <div class="card bg-primary text-white">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Total Cases</h6>
+                                                    <h3 class="mb-0">{{ total_cases }}</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 col-lg-3">
+                                            <div class="card bg-warning text-dark">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Draft Cases</h6>
+                                                    <h3 class="mb-0">{{ draft_count }}</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 col-lg-3">
+                                            <div class="card bg-info text-white">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Submitted</h6>
+                                                    <h3 class="mb-0">{{ submitted_count }}</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 col-lg-3">
+                                            <div class="card bg-success text-white">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Diagnosed</h6>
+                                                    <h3 class="mb-0">{{ diagnosed_count }}</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% elif profile.role == 'NEUROLOGIST' %}
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <div class="card bg-primary text-white">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Total Cases</h6>
+                                                    <h3 class="mb-0">{{ total_consultations }}</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-info text-white">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">In Progress</h6>
+                                                    <h3 class="mb-0">{{ in_progress_consultations }}</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-success text-white">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Completed</h6>
+                                                    <h3 class="mb-0">{{ completed_consultations }}</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
