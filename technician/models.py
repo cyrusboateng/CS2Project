@@ -47,6 +47,7 @@ class Patient(models.Model):
     # Chief Complaint and Notes
     chief_complaint = models.TextField()
     notes = models.TextField(blank=True)
+    nihss = models.TextField(blank=True, help_text="National Institutes of Health Stroke Scale score and details")
     
     # Status and Metadata
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEW')

@@ -124,6 +124,12 @@ def patient_detail(request, pk):
             messages.success(request, 'Case submitted successfully.')
             return redirect('technician:dashboard')
             
+        elif 'update_nihss' in request.POST:
+            patient.nihss = request.POST.get('nihss', '')
+            patient.save()
+            messages.success(request, 'NIHSS details updated successfully.')
+            return redirect('technician:patient_detail', pk=pk)
+            
         elif 'upload_ct_scan' in request.POST and request.FILES.get('ct_scan'):
             try:
                 CTScan.objects.create(

@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-(324ir))$s^9%4c9*z6w0#zg+%6^v*u(tpa05pqu2b)nmx*a5v'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = True
 
 # Deployment settings
 PORT = int(os.environ.get('PORT', 10000))
@@ -149,8 +149,8 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
-    'http://127.0.0.1:62461',
-    'http://localhost:62461',
+    'http://127.0.0.1:*',
+    'http://localhost:*',
 ]
 
 # Default primary key field type

@@ -217,17 +217,29 @@
         <div class="col-md-4">
             <!-- NIHSS Score -->
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">NIHSS Score</h4>
+                    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#nihssForm">
+                        <i class="fas fa-edit"></i> Edit NIHSS
+                    </button>
                 </div>
                 <div class="card-body">
-                    <div class="text-center">
-                        <h1 class="display-1">{{ patient.nihss_score }}</h1>
-                        <p class="text-muted">
-                            {% if patient.nihss_score <= 4 %}Minor Stroke
-                            {% elif patient.nihss_score <= 15 %}Moderate Stroke
-                            {% else %}Severe Stroke{% endif %}
-                        </p>
+                    <div class="collapse mb-3" id="nihssForm">
+                        <form method="post" class="border rounded p-3 bg-light">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="nihss" class="form-label">NIHSS Details</label>
+                                <textarea class="form-control" id="nihss" name="nihss" rows="4">{{ patient.nihss }}</textarea>
+                                <div class="form-text">Enter the NIHSS score and any relevant details about the assessment.</div>
+                            </div>
+                            <button type="submit" name="update_nihss" class="btn btn-primary">Save NIHSS</button>
+                        </form>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <div class="mb-3">
+                            <p class="mb-2">{{ patient.nihss|default:"No NIHSS assessment recorded."|linebreaks }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
