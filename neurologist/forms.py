@@ -4,10 +4,11 @@ from .models import Consultation
 class ConsultationForm(forms.ModelForm):
     class Meta:
         model = Consultation
-        fields = ['diagnosis', 'diagnosis_notes', 'treatment_plan', 'follow_up_notes', 'status']
+        fields = ['diagnosis', 'diagnosis_notes', 'treatment_plan', 'medications', 'follow_up_notes', 'status']
         widgets = {
             'diagnosis_notes': forms.Textarea(attrs={'rows': 4}),
             'treatment_plan': forms.Textarea(attrs={'rows': 4}),
+            'medications': forms.Textarea(attrs={'rows': 4, 'placeholder': 'List medications with dosages and frequency'}),
             'follow_up_notes': forms.Textarea(attrs={'rows': 4}),
         }
 

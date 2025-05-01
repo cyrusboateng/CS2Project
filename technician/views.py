@@ -10,14 +10,14 @@ from .forms import PatientForm, VitalSignsLogForm
 
 @login_required
 def dashboard(request):
-    patients = Patient.objects.filter(created_by=request.user).order_by('-created_at')
+    patients = Patient.objects.filter(technician=request.user).order_by('-created_at')
     paginator = Paginator(patients, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
     context = {
         'page_obj': page_obj,
-        'draft_count': patients.filter(status='DRAFT').count(),
+        'new_count': patients.filter(status='NEW').count(),
         'submitted_count': patients.filter(status='SUBMITTED').count(),
         'diagnosed_count': patients.filter(status='DIAGNOSED').count(),
     }
@@ -29,10 +29,12 @@ def patient_new(request):
         form = PatientForm(request.POST)
         if form.is_valid():
             patient = form.save(commit=False)
-            patient.created_by = request.user
+            patient.technician = request.user
             patient.save()
             messages.success(request, 'Patient record created successfully.')
             return redirect('technician:patient_detail', pk=patient.pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = PatientForm()
     
@@ -40,13 +42,15 @@ def patient_new(request):
 
 @login_required
 def patient_edit(request, pk):
-    patient = get_object_or_404(Patient, pk=pk, created_by=request.user)
+    patient = get_object_or_404(Patient, pk=pk, technician=request.user)
     if request.method == 'POST':
         form = PatientForm(request.POST, instance=patient)
         if form.is_valid():
             patient = form.save()
             messages.success(request, 'Patient record updated successfully.')
             return redirect('technician:patient_detail', pk=patient.pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = PatientForm(instance=patient)
     
@@ -58,12 +62,12 @@ def patient_edit(request, pk):
 
 @login_required
 def patient_detail(request, pk):
-    patient = get_object_or_404(Patient, pk=pk, created_by=request.user)
+    patient = get_object_or_404(Patient, pk=pk, technician=request.user)
     vital_signs_form = VitalSignsLogForm()
     vital_signs_logs = patient.vital_signs_logs.all()[:5]
     
     if request.method == 'POST':
-        if 'submit_case' in request.POST and patient.status == 'DRAFT':
+        if 'submit_case' in request.POST and patient.status == 'NEW':
             patient.status = 'SUBMITTED'
             patient.save()
             messages.success(request, 'Case submitted successfully for review.')
@@ -76,6 +80,8 @@ def patient_detail(request, pk):
             vital_signs.save()
             messages.success(request, 'Vital signs recorded successfully.')
             return redirect('technician:patient_detail', pk=pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
     
     return render(request, 'technician/patient_detail.html', {
         'patient': patient,
@@ -87,9 +93,9 @@ def patient_detail(request, pk):
 def patient_list(request):
     status = request.GET.get('status', '')
     if status:
-        patients = Patient.objects.filter(created_by=request.user, status=status)
+        patients = Patient.objects.filter(technician=request.user, status=status)
     else:
-        patients = Patient.objects.filter(created_by=request.user)
+        patients = Patient.objects.filter(technician=request.user)
     
     paginator = Paginator(patients.order_by('-created_at'), 10)
     page_number = request.GET.get('page')

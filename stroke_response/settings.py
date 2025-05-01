@@ -131,6 +131,12 @@ LOGOUT_REDIRECT_URL = 'accounts:login'
 SESSION_COOKIE_AGE = 3600  # 1 hour
 SESSION_SAVE_EVERY_REQUEST = True
 
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:62461',
+    'http://localhost:62461',
+]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

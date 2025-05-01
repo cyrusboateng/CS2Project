@@ -7,64 +7,77 @@ from django.urls import reverse
 
 class Patient(models.Model):
     STATUS_CHOICES = [
-        ('DRAFT', 'Draft'),
-        ('SUBMITTED', 'Submitted'),
+        ('NEW', 'New'),
+        ('SUBMITTED', 'Submitted for Review'),
         ('REVIEWED', 'Under Review'),
         ('DIAGNOSED', 'Diagnosed'),
-        ('CLOSED', 'Closed'),
+        ('DISCHARGED', 'Discharged'),
     ]
-
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
+    
+    GENDER_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+        ('O', 'Other'),
+    ]
     
     # Demographics
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField()
-    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
+    contact_number = models.CharField(max_length=15, blank=True)
+    address = models.TextField(blank=True)
+    emergency_contact_name = models.CharField(max_length=100, blank=True)
+    emergency_contact_number = models.CharField(max_length=15, blank=True)
     
-    # Medical History
+    # Medical Information
     medical_history = models.TextField(blank=True)
     current_medications = models.TextField(blank=True)
     allergies = models.TextField(blank=True)
     
-    # Vital Signs
+    # Initial Vital Signs
     blood_pressure_systolic = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(300)])
     blood_pressure_diastolic = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(200)])
     heart_rate = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(300)])
     respiratory_rate = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)])
     temperature = models.DecimalField(max_digits=4, decimal_places=1)
     oxygen_saturation = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)])
+    glasgow_coma_scale = models.IntegerField(validators=[MinValueValidator(3), MaxValueValidator(15)])
     
-    # NIHSS Score
-    nihss_score = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(42)])
+    # Chief Complaint and Notes
+    chief_complaint = models.TextField()
+    notes = models.TextField(blank=True)
     
-    # Timestamps
+    # Status and Metadata
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEW')
+    technician = models.ForeignKey(User, on_delete=models.CASCADE, related_name='patients')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         ordering = ['-created_at']
-    
+
     def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.status})"
-    
+        return f"{self.first_name} {self.last_name}"
+
     def get_absolute_url(self):
         return reverse('technician:patient_detail', kwargs={'pk': self.pk})
 
 class VitalSignsLog(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='vital_signs_logs')
-    timestamp = models.DateTimeField(auto_now_add=True)
     blood_pressure_systolic = models.IntegerField()
     blood_pressure_diastolic = models.IntegerField()
     heart_rate = models.IntegerField()
     respiratory_rate = models.IntegerField()
     temperature = models.DecimalField(max_digits=4, decimal_places=1)
     oxygen_saturation = models.IntegerField()
+    glasgow_coma_scale = models.IntegerField()
     notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-timestamp']
-        
+        ordering = ['-created_at']
+
     def __str__(self):
-        return f"Vitals for {self.patient} at {self.timestamp}"
+        return f"Vitals for {self.patient} at {self.created_at.strftime('%Y-%m-%d %H:%M')}"

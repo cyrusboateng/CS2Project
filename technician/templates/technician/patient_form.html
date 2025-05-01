@@ -8,8 +8,9 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="card-title mb-0">{{ title }}</h2>
+                    <button type="button" id="simulate-btn" class="btn btn-secondary">Simulate Patient Data</button>
                 </div>
                 <div class="card-body">
                     <form method="post" novalidate>
@@ -47,12 +48,73 @@
                                     {% endif %}
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.gender.id_for_label }}" class="form-label">Gender</label>
+                                    {{ form.gender }}
+                                    {% if form.gender.errors %}
+                                        <div class="text-danger">{{ form.gender.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.contact_number.id_for_label }}" class="form-label">Contact Number</label>
+                                    {{ form.contact_number }}
+                                    {% if form.contact_number.errors %}
+                                        <div class="text-danger">{{ form.contact_number.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h4>Contact Information</h4>
+                                <hr>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.address.id_for_label }}" class="form-label">Address</label>
+                                    {{ form.address }}
+                                    {% if form.address.errors %}
+                                        <div class="text-danger">{{ form.address.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.emergency_contact_name.id_for_label }}" class="form-label">Emergency Contact Name</label>
+                                    {{ form.emergency_contact_name }}
+                                    {% if form.emergency_contact_name.errors %}
+                                        <div class="text-danger">{{ form.emergency_contact_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.emergency_contact_number.id_for_label }}" class="form-label">Emergency Contact Number</label>
+                                    {{ form.emergency_contact_number }}
+                                    {% if form.emergency_contact_number.errors %}
+                                        <div class="text-danger">{{ form.emergency_contact_number.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
 
                         <div class="row mb-4">
                             <div class="col-12">
                                 <h4>Medical Information</h4>
                                 <hr>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.chief_complaint.id_for_label }}" class="form-label">Chief Complaint</label>
+                                    {{ form.chief_complaint }}
+                                    {% if form.chief_complaint.errors %}
+                                        <div class="text-danger">{{ form.chief_complaint.errors }}</div>
+                                    {% endif %}
+                                </div>
                             </div>
                             <div class="col-md-12">
                                 <div class="mb-3">
@@ -88,7 +150,7 @@
                                 <h4>Vital Signs</h4>
                                 <hr>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label for="{{ form.blood_pressure_systolic.id_for_label }}" class="form-label">Blood Pressure (Systolic)</label>
                                     {{ form.blood_pressure_systolic }}
@@ -97,7 +159,7 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label for="{{ form.blood_pressure_diastolic.id_for_label }}" class="form-label">Blood Pressure (Diastolic)</label>
                                     {{ form.blood_pressure_diastolic }}
@@ -106,16 +168,16 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
-                                    <label for="{{ form.heart_rate.id_for_label }}" class="form-label">Heart Rate</label>
+                                    <label for="{{ form.heart_rate.id_for_label }}" class="form-label">Heart Rate (bpm)</label>
                                     {{ form.heart_rate }}
                                     {% if form.heart_rate.errors %}
                                         <div class="text-danger">{{ form.heart_rate.errors }}</div>
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label for="{{ form.respiratory_rate.id_for_label }}" class="form-label">Respiratory Rate</label>
                                     {{ form.respiratory_rate }}
@@ -124,37 +186,46 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
-                                    <label for="{{ form.temperature.id_for_label }}" class="form-label">Temperature</label>
+                                    <label for="{{ form.temperature.id_for_label }}" class="form-label">Temperature (°F)</label>
                                     {{ form.temperature }}
                                     {% if form.temperature.errors %}
                                         <div class="text-danger">{{ form.temperature.errors }}</div>
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
-                                    <label for="{{ form.oxygen_saturation.id_for_label }}" class="form-label">Oxygen Saturation</label>
+                                    <label for="{{ form.oxygen_saturation.id_for_label }}" class="form-label">O2 Saturation (%)</label>
                                     {{ form.oxygen_saturation }}
                                     {% if form.oxygen_saturation.errors %}
                                         <div class="text-danger">{{ form.oxygen_saturation.errors }}</div>
                                     {% endif %}
                                 </div>
                             </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.glasgow_coma_scale.id_for_label }}" class="form-label">Glasgow Coma Scale</label>
+                                    {{ form.glasgow_coma_scale }}
+                                    {% if form.glasgow_coma_scale.errors %}
+                                        <div class="text-danger">{{ form.glasgow_coma_scale.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="row">
+                        <div class="row mb-4">
                             <div class="col-12">
-                                <h4>NIHSS Score</h4>
+                                <h4>Additional Notes</h4>
                                 <hr>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-12">
                                 <div class="mb-3">
-                                    <label for="{{ form.nihss_score.id_for_label }}" class="form-label">NIHSS Score</label>
-                                    {{ form.nihss_score }}
-                                    {% if form.nihss_score.errors %}
-                                        <div class="text-danger">{{ form.nihss_score.errors }}</div>
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                                    {{ form.notes }}
+                                    {% if form.notes.errors %}
+                                        <div class="text-danger">{{ form.notes.errors }}</div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -172,4 +243,88 @@
         </div>
     </div>
 </div>
-{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('simulate-btn').addEventListener('click', function() {
+    // Sample patient data
+    const firstNames = ['Maria', 'John', 'Sarah', 'Michael', 'Emma', 'David'];
+    const lastNames = ['Rodriguez', 'Smith', 'Johnson', 'Williams', 'Brown', 'Davis'];
+    const chiefComplaints = [
+        'Sudden onset of headache and confusion',
+        'Left-sided weakness and slurred speech',
+        'Sudden vision loss in right eye',
+        'Dizziness and difficulty walking',
+        'Facial drooping and numbness'
+    ];
+    const medicalConditions = [
+        'Hypertension, Type 2 Diabetes',
+        'Migraines, Depression',
+        'Asthma, Anxiety',
+        'High Cholesterol, GERD',
+        'Arthritis, Hypothyroidism'
+    ];
+    const medications = [
+        'Metformin 500mg daily, Lisinopril 10mg daily',
+        'Sumatriptan PRN, Sertraline 50mg daily',
+        'Albuterol inhaler PRN, Fluoxetine 20mg daily',
+        'Atorvastatin 20mg daily, Omeprazole 20mg daily',
+        'Levothyroxine 50mcg daily, Ibuprofen PRN'
+    ];
+    const allergies = [
+        'Penicillin',
+        'None known',
+        'Sulfa drugs',
+        'Latex',
+        'Aspirin'
+    ];
+
+    // Generate random data
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const gender = Math.random() < 0.5 ? 'M' : 'F';
+    
+    // Generate random date of birth (30-80 years old)
+    const today = new Date();
+    const years = Math.floor(Math.random() * (80 - 30 + 1)) + 30;
+    const birthDate = new Date(today.getFullYear() - years, 
+                             Math.floor(Math.random() * 12),
+                             Math.floor(Math.random() * 28) + 1);
+    
+    // Format date as YYYY-MM-DD
+    const formattedDate = birthDate.toISOString().split('T')[0];
+
+    // Generate vital signs
+    const systolic = Math.floor(Math.random() * (180 - 90 + 1)) + 90;
+    const diastolic = Math.floor(Math.random() * (110 - 60 + 1)) + 60;
+    const heartRate = Math.floor(Math.random() * (120 - 60 + 1)) + 60;
+    const respRate = Math.floor(Math.random() * (24 - 12 + 1)) + 12;
+    const temp = (Math.random() * (99.9 - 97.0) + 97.0).toFixed(1);
+    const o2sat = Math.floor(Math.random() * (100 - 92 + 1)) + 92;
+    const gcs = Math.floor(Math.random() * (15 - 13 + 1)) + 13;
+
+    // Fill form fields
+    document.getElementById('id_first_name').value = firstName;
+    document.getElementById('id_last_name').value = lastName;
+    document.getElementById('id_date_of_birth').value = formattedDate;
+    document.getElementById('id_gender').value = gender;
+    document.getElementById('id_contact_number').value = `(${Math.floor(Math.random() * 900) + 100}) ${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`;
+    document.getElementById('id_address').value = `${Math.floor(Math.random() * 9000) + 100} Main St\nCity, State 12345`;
+    document.getElementById('id_emergency_contact_name').value = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+    document.getElementById('id_emergency_contact_number').value = `(${Math.floor(Math.random() * 900) + 100}) ${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`;
+    document.getElementById('id_chief_complaint').value = chiefComplaints[Math.floor(Math.random() * chiefComplaints.length)];
+    document.getElementById('id_medical_history').value = medicalConditions[Math.floor(Math.random() * medicalConditions.length)];
+    document.getElementById('id_current_medications').value = medications[Math.floor(Math.random() * medications.length)];
+    document.getElementById('id_allergies').value = allergies[Math.floor(Math.random() * allergies.length)];
+    document.getElementById('id_blood_pressure_systolic').value = systolic;
+    document.getElementById('id_blood_pressure_diastolic').value = diastolic;
+    document.getElementById('id_heart_rate').value = heartRate;
+    document.getElementById('id_respiratory_rate').value = respRate;
+    document.getElementById('id_temperature').value = temp;
+    document.getElementById('id_oxygen_saturation').value = o2sat;
+    document.getElementById('id_glasgow_coma_scale').value = gcs;
+    document.getElementById('id_notes').value = 'Patient appears alert and oriented x3. No acute distress noted.';
+});
+</script>
+{% endblock extra_js %}
+{% endblock content %}

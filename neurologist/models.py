@@ -23,6 +23,7 @@ class Consultation(models.Model):
     diagnosis = models.CharField(max_length=20, choices=DIAGNOSIS_CHOICES, null=True, blank=True)
     diagnosis_notes = models.TextField(blank=True)
     treatment_plan = models.TextField(blank=True)
+    medications = models.TextField(blank=True, help_text="List prescribed medications and dosages")
     follow_up_notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
