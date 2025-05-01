@@ -17,12 +17,19 @@ def neurologist_required(view_func):
 @login_required
 @neurologist_required
 def dashboard(request):
+    # Show all consultations by this neurologist
     consultations = Consultation.objects.filter(neurologist=request.user).order_by('-created_at')
+    
+    # Count all patients by status
+    total_patients = Patient.objects.count()
     pending_cases = Patient.objects.filter(status='SUBMITTED').count()
+    diagnosed_cases = Patient.objects.filter(status='DIAGNOSED').count()
     
     context = {
         'consultations': consultations[:5],
+        'total_patients': total_patients,
         'pending_count': pending_cases,
+        'diagnosed_count': diagnosed_cases,
         'in_progress_count': consultations.filter(status='IN_PROGRESS').count(),
         'completed_count': consultations.filter(status='COMPLETED').count(),
     }
@@ -31,6 +38,7 @@ def dashboard(request):
 @login_required
 @neurologist_required
 def pending_cases(request):
+    # Show all patients that need review (status=SUBMITTED)
     patients = Patient.objects.filter(status='SUBMITTED').order_by('-created_at')
     paginator = Paginator(patients, 10)
     page_number = request.GET.get('page')
@@ -42,7 +50,28 @@ def pending_cases(request):
 
 @login_required
 @neurologist_required
+def case_history(request):
+    # Show all patients, regardless of status
+    status_filter = request.GET.get('status', '')
+    patients = Patient.objects.all().order_by('-created_at')
+    
+    if status_filter:
+        patients = patients.filter(status=status_filter)
+    
+    paginator = Paginator(patients, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'neurologist/case_history.html', {
+        'page_obj': page_obj,
+        'current_status': status_filter,
+        'status_choices': Patient.STATUS_CHOICES,
+    })
+
+@login_required
+@neurologist_required
 def start_consultation(request, patient_id):
+    # Allow starting consultation for any submitted patient
     patient = get_object_or_404(Patient, id=patient_id, status='SUBMITTED')
     
     # Check if consultation already exists
@@ -51,58 +80,48 @@ def start_consultation(request, patient_id):
         messages.warning(request, 'This case is already under review.')
         return redirect('neurologist:consultation_detail', pk=consultation.pk)
     
-    # Create new consultation
-    consultation = Consultation.objects.create(
-        patient=patient,
-        neurologist=request.user
-    )
-    patient.status = 'REVIEWED'
-    patient.save()
+    if request.method == 'POST':
+        form = ConsultationForm(request.POST)
+        if form.is_valid():
+            consultation = form.save(commit=False)
+            consultation.patient = patient
+            consultation.neurologist = request.user
+            consultation.save()
+            
+            # Update patient status
+            patient.status = 'REVIEWED'
+            patient.save()
+            
+            messages.success(request, 'Consultation started successfully.')
+            return redirect('neurologist:consultation_detail', pk=consultation.pk)
+    else:
+        form = ConsultationForm()
     
-    messages.success(request, 'Consultation started successfully.')
-    return redirect('neurologist:consultation_detail', pk=consultation.pk)
+    return render(request, 'neurologist/consultation_form.html', {
+        'form': form,
+        'patient': patient,
+    })
 
 @login_required
 @neurologist_required
 def consultation_detail(request, pk):
     consultation = get_object_or_404(Consultation, pk=pk)
-    
-    # Ensure the neurologist can only view their own consultations
-    if consultation.neurologist != request.user:
-        raise PermissionDenied("You can only view your own consultations.")
-    
-    patient = consultation.patient
-    vital_signs_logs = patient.vital_signs_logs.all()[:5]
-    
     if request.method == 'POST':
         form = ConsultationForm(request.POST, instance=consultation)
         if form.is_valid():
-            form.save()
+            consultation = form.save()
+            
+            # If consultation is completed, update patient status
+            if consultation.status == 'COMPLETED':
+                consultation.patient.status = 'DIAGNOSED'
+                consultation.patient.save()
+            
             messages.success(request, 'Consultation updated successfully.')
-            return redirect('neurologist:consultation_detail', pk=pk)
+            return redirect('neurologist:consultation_detail', pk=consultation.pk)
     else:
         form = ConsultationForm(instance=consultation)
     
     return render(request, 'neurologist/consultation_detail.html', {
-        'consultation': consultation,
-        'patient': patient,
-        'vital_signs_logs': vital_signs_logs,
         'form': form,
-    })
-
-@login_required
-@neurologist_required
-def case_history(request):
-    consultations = Consultation.objects.filter(neurologist=request.user)
-    status = request.GET.get('status')
-    if status:
-        consultations = consultations.filter(status=status)
-    
-    paginator = Paginator(consultations.order_by('-created_at'), 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'neurologist/case_history.html', {
-        'page_obj': page_obj,
-        'status': status,
+        'consultation': consultation,
     })

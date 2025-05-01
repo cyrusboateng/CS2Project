@@ -1,94 +1,109 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block title %}Neurologist Dashboard - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container mt-4">
+    <h2>Neurologist Dashboard</h2>
+
+    <!-- Statistics Cards -->
     <div class="row mb-4">
-        <div class="col-md-12">
-            <h2>Neurologist Dashboard</h2>
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Patients</h5>
+                    <p class="card-text display-4">{{ total_patients }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Review</h5>
+                    <p class="card-text display-4">{{ pending_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">In Progress</h5>
+                    <p class="card-text display-4">{{ in_progress_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Diagnosed</h5>
+                    <p class="card-text display-4">{{ diagnosed_count }}</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Quick Actions -->
     <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Pending Cases</h5>
-                    <h2 class="display-4">{{ pending_count }}</h2>
-                    <p class="card-text">Cases awaiting review</p>
-                    <a href="{% url 'neurologist:pending_cases' %}" class="btn btn-light">View All</a>
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-warning text-dark">
                 <div class="card-body">
-                    <h5 class="card-title">In Progress</h5>
-                    <h2 class="display-4">{{ in_progress_count }}</h2>
-                    <p class="card-text">Cases under review</p>
-                    <a href="{% url 'neurologist:case_history' %}?status=IN_PROGRESS" class="btn btn-dark">View All</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Completed</h5>
-                    <h2 class="display-4">{{ completed_count }}</h2>
-                    <p class="card-text">Cases diagnosed</p>
-                    <a href="{% url 'neurologist:case_history' %}?status=COMPLETED" class="btn btn-light">View All</a>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'neurologist:pending_cases' %}" class="btn btn-warning">
+                            <i class="fas fa-clock me-2"></i>View Pending Cases
+                        </a>
+                        <a href="{% url 'neurologist:case_history' %}" class="btn btn-primary">
+                            <i class="fas fa-history me-2"></i>View All Cases
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Recent Consultations -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">Recent Consultations</h4>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Patient</th>
-                                    <th>Status</th>
-                                    <th>Diagnosis</th>
-                                    <th>Last Updated</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for consultation in consultations %}
-                                <tr>
-                                    <td>{{ consultation.patient.first_name }} {{ consultation.patient.last_name }}</td>
-                                    <td>
-                                        <span class="badge {% if consultation.status == 'IN_PROGRESS' %}bg-warning
-                                            {% else %}bg-success{% endif %}">
-                                            {{ consultation.get_status_display }}
-                                        </span>
-                                    </td>
-                                    <td>{{ consultation.get_diagnosis_display|default:"Pending" }}</td>
-                                    <td>{{ consultation.updated_at|date:"M d, Y H:i" }}</td>
-                                    <td>
-                                        <a href="{% url 'neurologist:consultation_detail' pk=consultation.pk %}" 
-                                           class="btn btn-sm btn-info">View</a>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center">No recent consultations.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Consultations</h5>
+            <a href="{% url 'neurologist:case_history' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for consultation in consultations %}
+                        <tr>
+                            <td>{{ consultation.patient.first_name }} {{ consultation.patient.last_name }}</td>
+                            <td>
+                                <span class="badge {% if consultation.status == 'IN_PROGRESS' %}bg-info
+                                                 {% elif consultation.status == 'COMPLETED' %}bg-success
+                                                 {% else %}bg-secondary{% endif %}">
+                                    {{ consultation.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ consultation.updated_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'neurologist:consultation_detail' consultation.pk %}" 
+                                   class="btn btn-sm btn-info">View Details</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No recent consultations.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
