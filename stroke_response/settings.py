@@ -28,6 +28,9 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
+# Port configuration
+PORT = int(os.environ.get('PORT', 10000))
+
 
 # Application definition
 

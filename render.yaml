@@ -10,5 +10,5 @@ services:
       - key: DEBUG
         value: False
       - key: PORT
-        value: 8000
+        value: 10000
     staticPublishPath: ./staticfiles
