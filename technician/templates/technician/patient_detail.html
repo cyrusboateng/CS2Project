@@ -48,6 +48,13 @@
                                     {{ patient.get_status_display }}
                                 </span>
                             </p>
+                            {% if patient.status == 'DIAGNOSED' %}
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-info" data-bs-toggle="collapse" data-bs-target="#diagnosisDetails">
+                                    <i class="fas fa-eye"></i> View Neurologist's Diagnosis
+                                </button>
+                            </div>
+                            {% endif %}
                             <p><strong>Created:</strong> {{ patient.created_at|date:"F j, Y" }}</p>
                             <p><strong>Last Updated:</strong> {{ patient.updated_at|date:"F j, Y H:i" }}</p>
                         </div>
@@ -150,6 +157,56 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Neurologist's Diagnosis -->
+            {% if patient.status == 'DIAGNOSED' and patient.consultations.exists %}
+            <div class="collapse" id="diagnosisDetails">
+                <div class="card mb-4 mt-3">
+                    <div class="card-header">
+                        <h4 class="mb-0">Neurologist's Diagnosis</h4>
+                    </div>
+                    <div class="card-body">
+                    {% with consultation=patient.consultations.all|first %}
+                    <div class="diagnosis-info">
+                        <div class="mb-3">
+                            <h5>Diagnosis</h5>
+                            <p class="mb-2">{{ consultation.diagnosis }}</p>
+                            <small class="text-muted">Diagnosed by Dr. {{ consultation.neurologist.get_full_name }} on {{ consultation.created_at|date:"F j, Y" }}</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <h5>Treatment Plan</h5>
+                            <div class="treatment-plan">
+                                {{ consultation.treatment_plan|linebreaks }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h5>Medications</h5>
+                            <div class="medications">
+                                {{ consultation.medications|linebreaks }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h5>Additional Notes</h5>
+                            <div class="notes">
+                                {{ consultation.notes|default:"No additional notes"|linebreaks }}
+                            </div>
+                        </div>
+
+                        <div class="follow-up mt-4">
+                            <h5>Follow-up Instructions</h5>
+                            <div class="alert alert-info">
+                                {{ consultation.follow_up_instructions|default:"No specific follow-up instructions provided"|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <div class="col-md-4">

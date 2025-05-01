@@ -3,9 +3,11 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.db.models import Prefetch
 from .models import Patient, VitalSignsLog, CTScan
 from .forms import PatientForm, VitalSignsLogForm
 from accounts.decorators import is_technician
+from neurologist.models import Consultation
 
 # Create your views here.
 
@@ -100,7 +102,17 @@ def patient_edit(request, pk):
 @login_required
 @user_passes_test(is_technician)
 def patient_detail(request, pk):
-    patient = get_object_or_404(Patient, pk=pk)
+    patient = get_object_or_404(
+        Patient.objects.prefetch_related(
+            Prefetch(
+                'consultations',
+                queryset=Consultation.objects.select_related('neurologist').order_by('-created_at')
+            ),
+            'vital_signs_logs',
+            'ct_scans'
+        ),
+        pk=pk
+    )
     
     if request.method == 'POST':
         if 'submit_case' in request.POST and patient.status == 'NEW':
