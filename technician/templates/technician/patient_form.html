@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load form_filters %}
+
+{% block title %}{{ title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">{{ title }}</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h4>Demographics</h4>
+                                <hr>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <div class="text-danger">{{ form.first_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <div class="text-danger">{{ form.last_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">Date of Birth</label>
+                                    {{ form.date_of_birth }}
+                                    {% if form.date_of_birth.errors %}
+                                        <div class="text-danger">{{ form.date_of_birth.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h4>Medical Information</h4>
+                                <hr>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.medical_history.id_for_label }}" class="form-label">Medical History</label>
+                                    {{ form.medical_history }}
+                                    {% if form.medical_history.errors %}
+                                        <div class="text-danger">{{ form.medical_history.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.current_medications.id_for_label }}" class="form-label">Current Medications</label>
+                                    {{ form.current_medications }}
+                                    {% if form.current_medications.errors %}
+                                        <div class="text-danger">{{ form.current_medications.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.allergies.id_for_label }}" class="form-label">Allergies</label>
+                                    {{ form.allergies }}
+                                    {% if form.allergies.errors %}
+                                        <div class="text-danger">{{ form.allergies.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h4>Vital Signs</h4>
+                                <hr>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.blood_pressure_systolic.id_for_label }}" class="form-label">Blood Pressure (Systolic)</label>
+                                    {{ form.blood_pressure_systolic }}
+                                    {% if form.blood_pressure_systolic.errors %}
+                                        <div class="text-danger">{{ form.blood_pressure_systolic.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.blood_pressure_diastolic.id_for_label }}" class="form-label">Blood Pressure (Diastolic)</label>
+                                    {{ form.blood_pressure_diastolic }}
+                                    {% if form.blood_pressure_diastolic.errors %}
+                                        <div class="text-danger">{{ form.blood_pressure_diastolic.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.heart_rate.id_for_label }}" class="form-label">Heart Rate</label>
+                                    {{ form.heart_rate }}
+                                    {% if form.heart_rate.errors %}
+                                        <div class="text-danger">{{ form.heart_rate.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.respiratory_rate.id_for_label }}" class="form-label">Respiratory Rate</label>
+                                    {{ form.respiratory_rate }}
+                                    {% if form.respiratory_rate.errors %}
+                                        <div class="text-danger">{{ form.respiratory_rate.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.temperature.id_for_label }}" class="form-label">Temperature</label>
+                                    {{ form.temperature }}
+                                    {% if form.temperature.errors %}
+                                        <div class="text-danger">{{ form.temperature.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.oxygen_saturation.id_for_label }}" class="form-label">Oxygen Saturation</label>
+                                    {{ form.oxygen_saturation }}
+                                    {% if form.oxygen_saturation.errors %}
+                                        <div class="text-danger">{{ form.oxygen_saturation.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <h4>NIHSS Score</h4>
+                                <hr>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.nihss_score.id_for_label }}" class="form-label">NIHSS Score</label>
+                                    {{ form.nihss_score }}
+                                    {% if form.nihss_score.errors %}
+                                        <div class="text-danger">{{ form.nihss_score.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Save Patient</button>
+                                <a href="{% url 'technician:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

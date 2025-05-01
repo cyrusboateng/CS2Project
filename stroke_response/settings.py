@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # Local apps
-    'users',
+    'accounts',
     'technician',
     'neurologist',
 ]
@@ -59,10 +59,11 @@ ROOT_URLCONF = 'stroke_response.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Add project-level templates directory
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -122,9 +123,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Authentication settings
-LOGIN_URL = 'users:login'
-LOGIN_REDIRECT_URL = 'users:dashboard'
-LOGOUT_REDIRECT_URL = 'users:login'
+LOGIN_REDIRECT_URL = 'accounts:dashboard'
+LOGIN_URL = 'accounts:login'
+LOGOUT_REDIRECT_URL = 'accounts:login'
 
 # Session settings
 SESSION_COOKIE_AGE = 3600  # 1 hour

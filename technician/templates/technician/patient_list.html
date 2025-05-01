@@ -1,13 +1,22 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Case History - {{ block.super }}{% endblock %}
+{% block title %}Patient List - {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row mb-4">
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h2>Case History</h2>
+                <h2>
+                    {% if status %}
+                        {{ status|title }} Cases
+                    {% else %}
+                        All Patients
+                    {% endif %}
+                </h2>
+                <a href="{% url 'technician:patient_new' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> New Patient
+                </a>
             </div>
         </div>
     </div>
@@ -19,15 +28,19 @@
                     <ul class="nav nav-pills card-header-pills">
                         <li class="nav-item">
                             <a class="nav-link {% if not status %}active{% endif %}" 
-                               href="{% url 'neurologist:case_history' %}">All Cases</a>
+                               href="{% url 'technician:patient_list' %}">All</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if status == 'IN_PROGRESS' %}active{% endif %}" 
-                               href="?status=IN_PROGRESS">In Progress</a>
+                            <a class="nav-link {% if status == 'DRAFT' %}active{% endif %}" 
+                               href="?status=DRAFT">Drafts</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if status == 'COMPLETED' %}active{% endif %}" 
-                               href="?status=COMPLETED">Completed</a>
+                            <a class="nav-link {% if status == 'SUBMITTED' %}active{% endif %}" 
+                               href="?status=SUBMITTED">Submitted</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if status == 'DIAGNOSED' %}active{% endif %}" 
+                               href="?status=DIAGNOSED">Diagnosed</a>
                         </li>
                     </ul>
                 </div>
@@ -36,47 +49,41 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Patient</th>
+                                    <th>Name</th>
                                     <th>Status</th>
-                                    <th>Diagnosis</th>
                                     <th>NIHSS Score</th>
+                                    <th>Created</th>
                                     <th>Last Updated</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for consultation in page_obj %}
+                                {% for patient in page_obj %}
                                 <tr>
-                                    <td>{{ consultation.patient.first_name }} {{ consultation.patient.last_name }}</td>
+                                    <td>{{ patient.first_name }} {{ patient.last_name }}</td>
                                     <td>
-                                        <span class="badge {% if consultation.status == 'IN_PROGRESS' %}bg-warning
-                                            {% else %}bg-success{% endif %}">
-                                            {{ consultation.get_status_display }}
+                                        <span class="badge {% if patient.status == 'DRAFT' %}bg-primary
+                                            {% elif patient.status == 'SUBMITTED' %}bg-warning
+                                            {% elif patient.status == 'DIAGNOSED' %}bg-success
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ patient.get_status_display }}
                                         </span>
                                     </td>
+                                    <td>{{ patient.nihss_score }}</td>
+                                    <td>{{ patient.created_at|date:"M d, Y" }}</td>
+                                    <td>{{ patient.updated_at|date:"M d, Y H:i" }}</td>
                                     <td>
-                                        {% if consultation.diagnosis %}
-                                            {{ consultation.get_diagnosis_display }}
-                                        {% else %}
-                                            <span class="text-muted">Pending</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="badge {% if consultation.patient.nihss_score <= 4 %}bg-success
-                                            {% elif consultation.patient.nihss_score <= 15 %}bg-warning
-                                            {% else %}bg-danger{% endif %}">
-                                            {{ consultation.patient.nihss_score }}
-                                        </span>
-                                    </td>
-                                    <td>{{ consultation.updated_at|date:"M d, Y H:i" }}</td>
-                                    <td>
-                                        <a href="{% url 'neurologist:consultation_detail' pk=consultation.pk %}" 
+                                        <a href="{% url 'technician:patient_detail' pk=patient.pk %}" 
                                            class="btn btn-sm btn-info">View</a>
+                                        {% if patient.status == 'DRAFT' %}
+                                        <a href="{% url 'technician:patient_edit' pk=patient.pk %}" 
+                                           class="btn btn-sm btn-warning">Edit</a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="6" class="text-center">No cases found.</td>
+                                    <td colspan="6" class="text-center">No patients found.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

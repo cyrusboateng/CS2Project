@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}{{ patient.first_name }} {{ patient.last_name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>Patient Details</h2>
+                <div>
+                    {% if patient.status == 'DRAFT' %}
+                        <a href="{% url 'technician:patient_edit' pk=patient.pk %}" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" name="submit_case" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Submit Case
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Patient Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Patient Information</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Name:</strong> {{ patient.first_name }} {{ patient.last_name }}</p>
+                            <p><strong>Date of Birth:</strong> {{ patient.date_of_birth }}</p>
+                            <p><strong>Gender:</strong> {{ patient.get_gender_display }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> 
+                                <span class="badge {% if patient.status == 'DRAFT' %}bg-primary
+                                    {% elif patient.status == 'SUBMITTED' %}bg-warning
+                                    {% elif patient.status == 'DIAGNOSED' %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ patient.get_status_display }}
+                                </span>
+                            </p>
+                            <p><strong>Created:</strong> {{ patient.created_at|date:"F j, Y" }}</p>
+                            <p><strong>Last Updated:</strong> {{ patient.updated_at|date:"F j, Y H:i" }}</p>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4">Medical History</h5>
+                    <p>{{ patient.medical_history|linebreaks|default:"No medical history recorded." }}</p>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>Current Medications</h5>
+                            <p>{{ patient.current_medications|linebreaks|default:"No medications recorded." }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Allergies</h5>
+                            <p>{{ patient.allergies|linebreaks|default:"No allergies recorded." }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Latest Vital Signs -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Latest Vital Signs</h4>
+                    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#newVitalsForm">
+                        Add New Vitals
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="collapse mb-4" id="newVitalsForm">
+                        <div class="card card-body bg-light">
+                            <h5>Record New Vital Signs</h5>
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Blood Pressure (Systolic)</label>
+                                        {{ vital_signs_form.blood_pressure_systolic }}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Blood Pressure (Diastolic)</label>
+                                        {{ vital_signs_form.blood_pressure_diastolic }}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Heart Rate</label>
+                                        {{ vital_signs_form.heart_rate }}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Respiratory Rate</label>
+                                        {{ vital_signs_form.respiratory_rate }}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Temperature</label>
+                                        {{ vital_signs_form.temperature }}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Oxygen Saturation</label>
+                                        {{ vital_signs_form.oxygen_saturation }}
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Notes</label>
+                                        {{ vital_signs_form.notes }}
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Record Vitals</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>BP</th>
+                                    <th>HR</th>
+                                    <th>RR</th>
+                                    <th>Temp</th>
+                                    <th>O2 Sat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in vital_signs_logs %}
+                                <tr>
+                                    <td>{{ log.timestamp|date:"H:i" }}</td>
+                                    <td>{{ log.blood_pressure_systolic }}/{{ log.blood_pressure_diastolic }}</td>
+                                    <td>{{ log.heart_rate }}</td>
+                                    <td>{{ log.respiratory_rate }}</td>
+                                    <td>{{ log.temperature }}°C</td>
+                                    <td>{{ log.oxygen_saturation }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No vital signs recorded yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- NIHSS Score -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">NIHSS Score</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <h1 class="display-1">{{ patient.nihss_score }}</h1>
+                        <p class="text-muted">
+                            {% if patient.nihss_score <= 4 %}Minor Stroke
+                            {% elif patient.nihss_score <= 15 %}Moderate Stroke
+                            {% else %}Severe Stroke{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Vital Signs -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Current Vital Signs</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Blood Pressure:</span>
+                        <strong>{{ patient.blood_pressure_systolic }}/{{ patient.blood_pressure_diastolic }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Heart Rate:</span>
+                        <strong>{{ patient.heart_rate }} bpm</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Respiratory Rate:</span>
+                        <strong>{{ patient.respiratory_rate }} /min</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Temperature:</span>
+                        <strong>{{ patient.temperature }}°C</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Oxygen Saturation:</span>
+                        <strong>{{ patient.oxygen_saturation }}%</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

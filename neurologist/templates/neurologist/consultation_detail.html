@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Consultation for {{ patient.first_name }} {{ patient.last_name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>Consultation Review</h2>
+                <div>
+                    {% if consultation.status == 'IN_PROGRESS' %}
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#completeModal">
+                            Complete Consultation
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Patient Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Patient Information</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Name:</strong> {{ patient.first_name }} {{ patient.last_name }}</p>
+                            <p><strong>Date of Birth:</strong> {{ patient.date_of_birth }}</p>
+                            <p><strong>Gender:</strong> {{ patient.get_gender_display }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Medical History:</strong></p>
+                            <p>{{ patient.medical_history|linebreaks|default:"No medical history recorded." }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consultation Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Consultation Notes</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Diagnosis</label>
+                            {{ form.diagnosis }}
+                            {% if form.diagnosis.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.diagnosis.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Diagnosis Notes</label>
+                            {{ form.diagnosis_notes }}
+                            {% if form.diagnosis_notes.help_text %}
+                                <div class="form-text">{{ form.diagnosis_notes.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Treatment Plan</label>
+                            {{ form.treatment_plan }}
+                            {% if form.treatment_plan.help_text %}
+                                <div class="form-text">{{ form.treatment_plan.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Follow-up Notes</label>
+                            {{ form.follow_up_notes }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- NIHSS Score -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">NIHSS Score</h4>
+                </div>
+                <div class="card-body text-center">
+                    <h1 class="display-1">{{ patient.nihss_score }}</h1>
+                    <p class="text-muted">
+                        {% if patient.nihss_score <= 4 %}Minor Stroke
+                        {% elif patient.nihss_score <= 15 %}Moderate Stroke
+                        {% else %}Severe Stroke{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Vital Signs -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Recent Vital Signs</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>BP</th>
+                                    <th>HR</th>
+                                    <th>O2</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in vital_signs_logs %}
+                                <tr>
+                                    <td>{{ log.timestamp|date:"H:i" }}</td>
+                                    <td>{{ log.blood_pressure_systolic }}/{{ log.blood_pressure_diastolic }}</td>
+                                    <td>{{ log.heart_rate }}</td>
+                                    <td>{{ log.oxygen_saturation }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No vital signs recorded.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Consultation Modal -->
+<div class="modal fade" id="completeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Consultation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to complete this consultation? This will mark the case as diagnosed and notify the technician.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.status }}
+                    <input type="hidden" name="status" value="COMPLETED">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="consultationForm" class="btn btn-success">Complete Consultation</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
