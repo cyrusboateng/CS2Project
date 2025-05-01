@@ -10,23 +10,58 @@
                 <h2 class="text-center">Profile</h2>
             </div>
             <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
                 <div class="row">
                     <div class="col-md-6">
                         <h4>Account Information</h4>
                         <p><strong>Username:</strong> {{ user.username }}</p>
-                        <p><strong>Role:</strong> {{ user.userprofile.role }}</p>
                         <p><strong>Member since:</strong> {{ user.date_joined|date:"F j, Y" }}</p>
+                        <p><strong>Last login:</strong> {{ user.last_login|date:"F j, Y H:i" }}</p>
                     </div>
                     <div class="col-md-6">
-                        <h4>Activity Summary</h4>
-                        <p><strong>Last login:</strong> {{ user.last_login|date:"F j, Y H:i" }}</p>
-                        {% if user.userprofile.role == 'TECHNICIAN' %}
-                            <p><strong>Cases submitted:</strong> {{ user.patient_set.count }}</p>
-                        {% elif user.userprofile.role == 'NEUROLOGIST' %}
-                            <p><strong>Cases reviewed:</strong> {{ user.consultation_set.count }}</p>
-                        {% endif %}
+                        <h4>Role Selection</h4>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {{ form.role.errors }}
+                                <div class="btn-group-vertical w-100" role="group">
+                                    {% for value, text in form.role.field.choices %}
+                                        <input type="radio" class="btn-check" name="{{ form.role.name }}" 
+                                               id="role_{{ value }}" value="{{ value }}"
+                                               {% if form.role.value == value %}checked{% endif %}>
+                                        <label class="btn btn-outline-primary text-start" for="role_{{ value }}">
+                                            <i class="fas {% if value == 'TECHNICIAN' %}fa-user-md{% else %}fa-brain{% endif %} me-2"></i>
+                                            {{ text }}
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Update Role</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
+
+                {% if user.userprofile.role %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h4>Activity Summary</h4>
+                            {% if user.userprofile.role == 'TECHNICIAN' %}
+                                <p><strong>Cases submitted:</strong> {{ user.patient_set.count }}</p>
+                            {% elif user.userprofile.role == 'NEUROLOGIST' %}
+                                <p><strong>Cases reviewed:</strong> {{ user.consultation_set.count }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
