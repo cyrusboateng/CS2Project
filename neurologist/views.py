@@ -1,84 +1,60 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.core.exceptions import PermissionDenied
 from technician.models import Patient
 from .models import Consultation
 from .forms import ConsultationForm
 
-def neurologist_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        if not hasattr(request.user, 'userprofile') or request.user.userprofile.role != 'NEUROLOGIST':
-            raise PermissionDenied("You must be a neurologist to access this page.")
-        return view_func(request, *args, **kwargs)
-    return wrapper
+def is_neurologist(user):
+    return user.is_authenticated and hasattr(user, 'userprofile') and user.userprofile.role == 'NEUROLOGIST'
 
 @login_required
-@neurologist_required
+@user_passes_test(is_neurologist)
 def dashboard(request):
-    # Show all consultations by this neurologist
-    consultations = Consultation.objects.filter(neurologist=request.user).order_by('-created_at')
-    
-    # Count all patients by status
-    total_patients = Patient.objects.count()
-    pending_cases = Patient.objects.filter(status='SUBMITTED').count()
-    diagnosed_cases = Patient.objects.filter(status='DIAGNOSED').count()
-    
+    consultations = Consultation.objects.filter(neurologist=request.user).order_by('-created_at')[:10]
+    total_patients = Patient.objects.all().count()  # All patients in the system
+    pending_count = Patient.objects.filter(status='SUBMITTED').count()  # Patients waiting for review
+    in_progress_count = Patient.objects.filter(status='REVIEWED').count()  # Patients under review
+    diagnosed_count = Patient.objects.filter(status='DIAGNOSED').count()  # Diagnosed patients
+
     context = {
-        'consultations': consultations[:5],
+        'consultations': consultations,
         'total_patients': total_patients,
-        'pending_count': pending_cases,
-        'diagnosed_count': diagnosed_cases,
-        'in_progress_count': consultations.filter(status='IN_PROGRESS').count(),
-        'completed_count': consultations.filter(status='COMPLETED').count(),
+        'pending_count': pending_count,
+        'in_progress_count': in_progress_count,
+        'diagnosed_count': diagnosed_count,
     }
     return render(request, 'neurologist/dashboard.html', context)
 
 @login_required
-@neurologist_required
-def pending_cases(request):
-    # Show all patients that need review (status=SUBMITTED)
-    patients = Patient.objects.filter(status='SUBMITTED').order_by('-created_at')
-    paginator = Paginator(patients, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'neurologist/pending_cases.html', {
-        'page_obj': page_obj,
-    })
-
-@login_required
-@neurologist_required
+@user_passes_test(is_neurologist)
 def case_history(request):
-    # Show all patients, regardless of status
-    status_filter = request.GET.get('status', '')
-    patients = Patient.objects.all().order_by('-created_at')
+    status = request.GET.get('status')
+    patients = Patient.objects.all()
     
-    if status_filter:
-        patients = patients.filter(status=status_filter)
+    if status:
+        patients = patients.filter(status=status)
     
-    paginator = Paginator(patients, 10)
+    paginator = Paginator(patients.order_by('-created_at'), 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    return render(request, 'neurologist/case_history.html', {
+    context = {
         'page_obj': page_obj,
-        'current_status': status_filter,
-        'status_choices': Patient.STATUS_CHOICES,
-    })
+        'current_status': status,
+    }
+    return render(request, 'neurologist/case_history.html', context)
 
 @login_required
-@neurologist_required
+@user_passes_test(is_neurologist)
 def start_consultation(request, patient_id):
-    # Allow starting consultation for any submitted patient
-    patient = get_object_or_404(Patient, id=patient_id, status='SUBMITTED')
+    patient = get_object_or_404(Patient, pk=patient_id)
     
-    # Check if consultation already exists
-    consultation = Consultation.objects.filter(patient=patient).first()
-    if consultation:
-        messages.warning(request, 'This case is already under review.')
-        return redirect('neurologist:consultation_detail', pk=consultation.pk)
+    # Check if patient is available for consultation
+    if patient.status != 'SUBMITTED':
+        messages.error(request, 'This patient is not available for consultation.')
+        return redirect('neurologist:case_history')
     
     if request.method == 'POST':
         form = ConsultationForm(request.POST)
@@ -89,39 +65,28 @@ def start_consultation(request, patient_id):
             consultation.save()
             
             # Update patient status
-            patient.status = 'REVIEWED'
+            patient.status = 'DIAGNOSED'
             patient.save()
             
-            messages.success(request, 'Consultation started successfully.')
+            messages.success(request, 'Consultation completed successfully.')
             return redirect('neurologist:consultation_detail', pk=consultation.pk)
     else:
         form = ConsultationForm()
     
-    return render(request, 'neurologist/consultation_form.html', {
+    context = {
         'form': form,
         'patient': patient,
-    })
+        'title': f'New Consultation for {patient.first_name} {patient.last_name}'
+    }
+    return render(request, 'neurologist/consultation_form.html', context)
 
 @login_required
-@neurologist_required
+@user_passes_test(is_neurologist)
 def consultation_detail(request, pk):
     consultation = get_object_or_404(Consultation, pk=pk)
-    if request.method == 'POST':
-        form = ConsultationForm(request.POST, instance=consultation)
-        if form.is_valid():
-            consultation = form.save()
-            
-            # If consultation is completed, update patient status
-            if consultation.status == 'COMPLETED':
-                consultation.patient.status = 'DIAGNOSED'
-                consultation.patient.save()
-            
-            messages.success(request, 'Consultation updated successfully.')
-            return redirect('neurologist:consultation_detail', pk=consultation.pk)
-    else:
-        form = ConsultationForm(instance=consultation)
-    
-    return render(request, 'neurologist/consultation_detail.html', {
-        'form': form,
+    context = {
         'consultation': consultation,
-    })
+        'patient': consultation.patient,
+        'title': f'Consultation Details for {consultation.patient.first_name} {consultation.patient.last_name}'
+    }
+    return render(request, 'neurologist/consultation_detail.html', context)

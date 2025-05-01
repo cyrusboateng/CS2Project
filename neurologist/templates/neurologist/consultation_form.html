@@ -8,11 +8,8 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header">
                     <h3 class="mb-0">{{ title }}</h3>
-                    <a href="{% url 'neurologist:case_history' %}" class="btn btn-outline-primary">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Cases
-                    </a>
                 </div>
                 <div class="card-body">
                     <!-- Patient Information -->
@@ -53,54 +50,65 @@
                         </div>
                     </div>
 
-                    <!-- Chief Complaint -->
+                    <!-- Chief Complaint and Symptoms -->
                     <div class="mb-4">
                         <h5>Chief Complaint</h5>
                         <p class="border rounded p-3 bg-light">{{ patient.chief_complaint }}</p>
                     </div>
 
-                    <!-- Consultation Details -->
-                    <div class="mb-4">
-                        <h5>Consultation Details</h5>
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="mb-4">
-                                    <h6 class="fw-bold">Diagnosis</h6>
-                                    <p class="mb-0">{{ consultation.diagnosis }}</p>
-                                </div>
-
-                                <div class="mb-4">
-                                    <h6 class="fw-bold">Treatment Plan</h6>
-                                    <p class="mb-0">{{ consultation.treatment_plan }}</p>
-                                </div>
-
-                                <div class="mb-4">
-                                    <h6 class="fw-bold">Medications</h6>
-                                    <p class="mb-0">{{ consultation.medications }}</p>
-                                </div>
-
-                                <div class="mb-4">
-                                    <h6 class="fw-bold">Follow-up Instructions</h6>
-                                    <p class="mb-0">{{ consultation.follow_up_instructions }}</p>
-                                </div>
-
-                                <div>
-                                    <h6 class="fw-bold">Additional Notes</h6>
-                                    <p class="mb-0">{{ consultation.notes|default:"No additional notes." }}</p>
-                                </div>
+                    <!-- Consultation Form -->
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ field.errors }}
                             </div>
+                            {% endif %}
                         </div>
-                    </div>
+                        {% endfor %}
 
-                    <!-- Consultation Meta -->
-                    <div class="border-top pt-3">
-                        <small class="text-muted">
-                            Consultation by Dr. {{ consultation.neurologist.get_full_name }} on {{ consultation.created_at|date:"F j, Y" }} at {{ consultation.created_at|time:"g:i A" }}
-                        </small>
-                    </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'neurologist:case_history' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Cases
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Complete Consultation
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Style form controls */
+    .form-control {
+        border-radius: 0.25rem;
+    }
+    textarea.form-control {
+        min-height: 120px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Bootstrap classes to form fields
+    document.querySelectorAll('textarea').forEach(function(textarea) {
+        textarea.classList.add('form-control');
+    });
+});
+</script>
 {% endblock %}

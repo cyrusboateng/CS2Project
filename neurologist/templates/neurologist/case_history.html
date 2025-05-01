@@ -1,111 +1,103 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Case History - {{ block.super }}{% endblock %}
+{% block title %}Case History{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Case History</h2>
-    
-    <!-- Status Filter -->
+<div class="container py-4">
+    <h1 class="mb-4">Case History</h1>
+
+    <!-- Filter Buttons -->
     <div class="mb-4">
-        <div class="btn-group">
-            <a href="{% url 'neurologist:case_history' %}" class="btn btn-outline-primary {% if not current_status %}active{% endif %}">
+        <div class="btn-group" role="group">
+            <a href="{% url 'neurologist:case_history' %}" class="btn {% if not current_status %}btn-primary{% else %}btn-outline-primary{% endif %}">
                 All Cases
             </a>
-            {% for status_code, status_label in status_choices %}
-            <a href="{% url 'neurologist:case_history' %}?status={{ status_code }}" 
-               class="btn btn-outline-primary {% if current_status == status_code %}active{% endif %}">
-                {{ status_label }}
+            <a href="{% url 'neurologist:case_history' %}?status=SUBMITTED" class="btn {% if current_status == 'SUBMITTED' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                Pending Review
             </a>
-            {% endfor %}
+            <a href="{% url 'neurologist:case_history' %}?status=REVIEWED" class="btn {% if current_status == 'REVIEWED' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                In Progress
+            </a>
+            <a href="{% url 'neurologist:case_history' %}?status=DIAGNOSED" class="btn {% if current_status == 'DIAGNOSED' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                Diagnosed
+            </a>
         </div>
     </div>
 
-    <!-- Patient List -->
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Patient Name</th>
-                    <th>Status</th>
-                    <th>Technician</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for patient in page_obj %}
-                <tr>
-                    <td>{{ patient.first_name }} {{ patient.last_name }}</td>
-                    <td>
-                        <span class="badge {% if patient.status == 'NEW' %}bg-primary
-                                         {% elif patient.status == 'SUBMITTED' %}bg-warning
-                                         {% elif patient.status == 'REVIEWED' %}bg-info
-                                         {% elif patient.status == 'DIAGNOSED' %}bg-success
-                                         {% else %}bg-secondary{% endif %}">
-                            {{ patient.get_status_display }}
-                        </span>
-                    </td>
-                    <td>{{ patient.technician.username }}</td>
-                    <td>{{ patient.created_at|date:"M d, Y" }}</td>
-                    <td>
-                        {% if patient.status == 'SUBMITTED' %}
-                            <a href="{% url 'neurologist:start_consultation' patient.id %}" 
-                               class="btn btn-sm btn-primary">Start Review</a>
-                        {% elif patient.status == 'REVIEWED' or patient.status == 'DIAGNOSED' %}
-                            {% with consultation=patient.consultation_set.first %}
-                                {% if consultation %}
-                                    <a href="{% url 'neurologist:consultation_detail' consultation.pk %}" 
-                                       class="btn btn-sm btn-info">View Consultation</a>
+    <!-- Patients Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Status</th>
+                            <th>Submitted Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in page_obj %}
+                        <tr>
+                            <td>{{ patient.first_name }} {{ patient.last_name }}</td>
+                            <td>{{ patient.age }}</td>
+                            <td>{{ patient.gender }}</td>
+                            <td>
+                                <span class="badge {% if patient.status == 'SUBMITTED' %}bg-warning{% elif patient.status == 'REVIEWED' %}bg-info{% elif patient.status == 'DIAGNOSED' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ patient.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ patient.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                {% if patient.status == 'SUBMITTED' %}
+                                <a href="{% url 'neurologist:start_consultation' patient_id=patient.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-stethoscope me-1"></i>Start Consultation
+                                </a>
+                                {% elif patient.consultation_set.exists %}
+                                <a href="{% url 'neurologist:consultation_detail' pk=patient.consultation_set.first.pk %}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-eye me-1"></i>View Consultation
+                                </a>
                                 {% endif %}
-                            {% endwith %}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center">No patients found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <p class="text-muted text-center">No patients found.</p>
+            {% endif %}
+        </div>
     </div>
-
-    <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-    <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page=1{% if current_status %}&status={{ current_status }}{% endif %}">&laquo; First</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Previous</a>
-            </li>
-            {% endif %}
-
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                <li class="page-item active">
-                    <span class="page-link">{{ num }}</span>
-                </li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}">{{ num }}</a>
-                </li>
-                {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Next</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if current_status %}&status={{ current_status }}{% endif %}">Last &raquo;</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
 </div>
 {% endblock %}

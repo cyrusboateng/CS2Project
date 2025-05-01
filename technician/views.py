@@ -30,8 +30,9 @@ def patient_new(request):
         if form.is_valid():
             patient = form.save(commit=False)
             patient.technician = request.user
+            patient.status = 'SUBMITTED'  # Set status to SUBMITTED when creating
             patient.save()
-            messages.success(request, 'Patient record created successfully.')
+            messages.success(request, 'Patient record created and submitted for neurologist review.')
             return redirect('technician:patient_detail', pk=patient.pk)
         else:
             messages.error(request, 'Please correct the errors below.')
@@ -43,65 +44,55 @@ def patient_new(request):
 @login_required
 def patient_edit(request, pk):
     patient = get_object_or_404(Patient, pk=pk, technician=request.user)
+    
+    # Don't allow editing if patient is already under review or diagnosed
+    if patient.status not in ['NEW', 'SUBMITTED']:
+        messages.error(request, 'Cannot edit patient details once under review or diagnosed.')
+        return redirect('technician:patient_detail', pk=patient.pk)
+    
     if request.method == 'POST':
         form = PatientForm(request.POST, instance=patient)
         if form.is_valid():
-            patient = form.save()
-            messages.success(request, 'Patient record updated successfully.')
+            patient = form.save(commit=False)
+            patient.status = 'SUBMITTED'  # Set status to SUBMITTED when updating
+            patient.save()
+            messages.success(request, 'Patient record updated and submitted for neurologist review.')
             return redirect('technician:patient_detail', pk=patient.pk)
-        else:
-            messages.error(request, 'Please correct the errors below.')
     else:
         form = PatientForm(instance=patient)
     
     return render(request, 'technician/patient_form.html', {
         'form': form,
-        'title': f'Edit Patient: {patient}',
-        'patient': patient
+        'patient': patient,
+        'title': 'Edit Patient'
     })
 
 @login_required
 def patient_detail(request, pk):
     patient = get_object_or_404(Patient, pk=pk, technician=request.user)
-    vital_signs_form = VitalSignsLogForm()
-    vital_signs_logs = patient.vital_signs_logs.all()[:5]
+    vital_signs_logs = patient.vital_signs_logs.order_by('-created_at')[:5]
     
     if request.method == 'POST':
-        if 'submit_case' in request.POST and patient.status == 'NEW':
-            patient.status = 'SUBMITTED'
-            patient.save()
-            messages.success(request, 'Case submitted successfully for review.')
-            return redirect('technician:patient_detail', pk=pk)
-            
-        vital_signs_form = VitalSignsLogForm(request.POST)
-        if vital_signs_form.is_valid():
-            vital_signs = vital_signs_form.save(commit=False)
+        form = VitalSignsLogForm(request.POST)
+        if form.is_valid():
+            vital_signs = form.save(commit=False)
             vital_signs.patient = patient
             vital_signs.save()
             messages.success(request, 'Vital signs recorded successfully.')
-            return redirect('technician:patient_detail', pk=pk)
-        else:
-            messages.error(request, 'Please correct the errors below.')
+            return redirect('technician:patient_detail', pk=patient.pk)
+    else:
+        form = VitalSignsLogForm()
     
     return render(request, 'technician/patient_detail.html', {
         'patient': patient,
-        'vital_signs_form': vital_signs_form,
         'vital_signs_logs': vital_signs_logs,
+        'form': form,
     })
 
 @login_required
 def patient_list(request):
-    status = request.GET.get('status', '')
-    if status:
-        patients = Patient.objects.filter(technician=request.user, status=status)
-    else:
-        patients = Patient.objects.filter(technician=request.user)
-    
-    paginator = Paginator(patients.order_by('-created_at'), 10)
+    patients = Patient.objects.filter(technician=request.user).order_by('-created_at')
+    paginator = Paginator(patients, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'technician/patient_list.html', {
-        'page_obj': page_obj,
-        'status': status,
-    })
+    return render(request, 'technician/patient_list.html', {'page_obj': page_obj})
