@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h4>Delete Patient</h4>
+        </div>
+        <div class="card-body">
+            <p class="lead">Are you sure you want to delete the patient record for <strong>{{ patient.first_name }} {{ patient.last_name }}</strong>?</p>
+            <p class="text-danger"><strong>Warning:</strong> This action cannot be undone. All associated data including vital signs logs, CT scans, and consultations will be permanently deleted.</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> Confirm Delete
+                    </button>
+                    <a href="{% url 'technician:patient_detail' patient.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

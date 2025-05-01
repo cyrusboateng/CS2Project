@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.db.models import Prefetch
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from .models import Patient, VitalSignsLog, CTScan
 from .forms import PatientForm, VitalSignsLogForm
 from accounts.decorators import is_technician
@@ -150,3 +152,15 @@ def patient_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     return render(request, 'technician/patient_list.html', {'page_obj': page_obj})
+
+@login_required
+@user_passes_test(is_technician)
+def patient_delete(request, pk):
+    patient = get_object_or_404(Patient, pk=pk, technician=request.user)
+    
+    if request.method == 'POST':
+        patient.delete()
+        messages.success(request, f'Patient {patient.first_name} {patient.last_name} has been deleted successfully.')
+        return redirect('technician:patient_list')
+    
+    return render(request, 'technician/patient_confirm_delete.html', {'patient': patient})
