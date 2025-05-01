@@ -1,1 +1,1 @@
-web: python manage.py runserver 0.0.0.0:$PORT
+web: gunicorn stroke_response.wsgi:application --bind 0.0.0.0:$PORT
