@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load form_filters %}
 
-{% block title %}{{ title }} - {{ block.super }}{% endblock %}
+{% block title %}{{ title }} - {{ block.super }}{% endblock title %}
 
 {% block content %}
 <div class="container">
@@ -243,6 +243,7 @@
         </div>
     </div>
 </div>
+{% endblock content %}
 
 {% block extra_js %}
 <script>
@@ -327,4 +328,3 @@ document.getElementById('simulate-btn').addEventListener('click', function() {
 });
 </script>
 {% endblock extra_js %}
-{% endblock content %}
