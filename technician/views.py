@@ -1,15 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
-from .models import Patient, VitalSignsLog
+from django.utils import timezone
+from .models import Patient, VitalSignsLog, CTScan
 from .forms import PatientForm, VitalSignsLogForm
 from accounts.decorators import is_technician
 
 # Create your views here.
 
 @login_required
-@is_technician
+@user_passes_test(is_technician)
 def dashboard(request):
     # Get all patients for this technician
     patients = Patient.objects.filter(technician=request.user).order_by('-created_at')
@@ -33,7 +34,7 @@ def dashboard(request):
     return render(request, 'technician/dashboard.html', context)
 
 @login_required
-@is_technician
+@user_passes_test(is_technician)
 def patient_create(request):
     if request.method == 'POST':
         form = PatientForm(request.POST)
@@ -61,7 +62,7 @@ def patient_create(request):
     return render(request, 'technician/patient_form.html', {'form': form, 'title': 'New Patient'})
 
 @login_required
-@is_technician
+@user_passes_test(is_technician)
 def patient_edit(request, pk):
     patient = get_object_or_404(Patient, pk=pk, technician=request.user)
     
@@ -97,30 +98,40 @@ def patient_edit(request, pk):
     })
 
 @login_required
-@is_technician
+@user_passes_test(is_technician)
 def patient_detail(request, pk):
-    patient = get_object_or_404(Patient, pk=pk, technician=request.user)
-    vital_signs_logs = patient.vital_signs_logs.order_by('-created_at')[:5]
+    patient = get_object_or_404(Patient, pk=pk)
     
     if request.method == 'POST':
-        form = VitalSignsLogForm(request.POST)
-        if form.is_valid():
-            vital_signs = form.save(commit=False)
-            vital_signs.patient = patient
-            vital_signs.save()
-            messages.success(request, 'Vital signs recorded successfully.')
-            return redirect('technician:patient_detail', pk=patient.pk)
-    else:
-        form = VitalSignsLogForm()
+        if 'submit_case' in request.POST and patient.status == 'NEW':
+            patient.status = 'SUBMITTED'
+            patient.submitted_at = timezone.now()
+            patient.save()
+            messages.success(request, 'Case submitted successfully.')
+            return redirect('technician:dashboard')
+            
+        elif 'upload_ct_scan' in request.POST and request.FILES.get('ct_scan'):
+            try:
+                CTScan.objects.create(
+                    patient=patient,
+                    image=request.FILES['ct_scan'],
+                    date_taken=request.POST['date_taken'],
+                    description=request.POST.get('description', '')
+                )
+                messages.success(request, 'CT scan uploaded successfully.')
+            except Exception as e:
+                messages.error(request, f'Error uploading CT scan: {str(e)}')
+            return redirect('technician:patient_detail', pk=pk)
     
-    return render(request, 'technician/patient_detail.html', {
+    vital_signs = patient.vital_signs_logs.all()[:5]
+    context = {
         'patient': patient,
-        'vital_signs_logs': vital_signs_logs,
-        'form': form,
-    })
+        'vital_signs': vital_signs,
+    }
+    return render(request, 'technician/patient_detail.html', context)
 
 @login_required
-@is_technician
+@user_passes_test(is_technician)
 def patient_list(request):
     patients = Patient.objects.filter(technician=request.user).order_by('-created_at')
     paginator = Paginator(patients, 10)

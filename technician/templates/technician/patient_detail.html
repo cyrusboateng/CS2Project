@@ -170,6 +170,59 @@
                 </div>
             </div>
 
+            <!-- CT Scans -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">CT Scans</h4>
+                    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#newCTScanForm">
+                        <i class="fas fa-plus"></i> Upload CT Scan
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Upload Form -->
+                    <div class="collapse mb-3" id="newCTScanForm">
+                        <form method="post" enctype="multipart/form-data" class="border rounded p-3 bg-light">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="ct_scan" class="form-label">CT Scan Image</label>
+                                <input type="file" class="form-control" id="ct_scan" name="ct_scan" accept="image/*" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="date_taken" class="form-label">Date Taken</label>
+                                <input type="date" class="form-control" id="date_taken" name="date_taken" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description (Optional)</label>
+                                <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                            </div>
+                            <button type="submit" name="upload_ct_scan" class="btn btn-primary">Upload</button>
+                        </form>
+                    </div>
+
+                    <!-- CT Scan List -->
+                    {% if patient.ct_scans.exists %}
+                        <div class="list-group">
+                        {% for ct_scan in patient.ct_scans.all %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">CT Scan - {{ ct_scan.date_taken|date:"F j, Y" }}</h6>
+                                    <small>{{ ct_scan.uploaded_at|timesince }} ago</small>
+                                </div>
+                                <a href="{{ ct_scan.image.url }}" target="_blank">
+                                    <img src="{{ ct_scan.image.url }}" class="img-thumbnail mt-2" alt="CT Scan">
+                                </a>
+                                {% if ct_scan.description %}
+                                    <p class="mb-1 text-muted small">{{ ct_scan.description }}</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No CT scans uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Current Vital Signs -->
             <div class="card">
                 <div class="card-header">

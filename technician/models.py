@@ -81,3 +81,16 @@ class VitalSignsLog(models.Model):
 
     def __str__(self):
         return f"Vitals for {self.patient} at {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+class CTScan(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='ct_scans')
+    image = models.ImageField(upload_to='ct_scans/%Y/%m/%d/')
+    description = models.TextField(blank=True, help_text="Optional description or notes about the CT scan")
+    date_taken = models.DateField(help_text="Date the CT scan was taken")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-date_taken']
+    
+    def __str__(self):
+        return f"CT Scan for {self.patient} taken on {self.date_taken}"
