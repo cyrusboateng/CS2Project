@@ -11,16 +11,24 @@ from accounts.decorators import is_technician
 @login_required
 @is_technician
 def dashboard(request):
+    # Get all patients for this technician
     patients = Patient.objects.filter(technician=request.user).order_by('-created_at')
-    paginator = Paginator(patients, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    
+    # Get counts for different statuses
+    total_patients = patients.count()
+    draft_count = patients.filter(status='NEW').count()
+    submitted_count = patients.filter(status='SUBMITTED').count()
+    diagnosed_count = patients.filter(status='DIAGNOSED').count()
+    
+    # Get recent patients (all statuses)
+    recent_patients = patients[:10]  # Get 10 most recent patients
     
     context = {
-        'page_obj': page_obj,
-        'new_count': patients.filter(status='NEW').count(),
-        'submitted_count': patients.filter(status='SUBMITTED').count(),
-        'diagnosed_count': patients.filter(status='DIAGNOSED').count(),
+        'recent_patients': recent_patients,
+        'total_patients': total_patients,
+        'draft_count': draft_count,
+        'submitted_count': submitted_count,
+        'diagnosed_count': diagnosed_count,
     }
     return render(request, 'technician/dashboard.html', context)
 

@@ -13,10 +13,16 @@ def is_neurologist(user):
 @user_passes_test(is_neurologist)
 def dashboard(request):
     consultations = Consultation.objects.filter(neurologist=request.user).order_by('-created_at')[:10]
-    total_patients = Patient.objects.all().count()  # All patients in the system
-    pending_count = Patient.objects.filter(status='SUBMITTED').count()  # Patients waiting for review
-    in_progress_count = Patient.objects.filter(status='REVIEWED').count()  # Patients under review
-    diagnosed_count = Patient.objects.filter(status='DIAGNOSED').count()  # Diagnosed patients
+    
+    # Only count submitted, reviewed, and diagnosed patients
+    submitted_patients = Patient.objects.filter(status='SUBMITTED')
+    reviewed_patients = Patient.objects.filter(status='REVIEWED')
+    diagnosed_patients = Patient.objects.filter(status='DIAGNOSED')
+    
+    total_patients = submitted_patients.count() + reviewed_patients.count() + diagnosed_patients.count()
+    pending_count = submitted_patients.count()
+    in_progress_count = reviewed_patients.count()
+    diagnosed_count = diagnosed_patients.count()
 
     context = {
         'consultations': consultations,
@@ -31,7 +37,9 @@ def dashboard(request):
 @user_passes_test(is_neurologist)
 def case_history(request):
     status = request.GET.get('status')
-    patients = Patient.objects.all()
+    
+    # Base queryset excluding NEW (draft) patients
+    patients = Patient.objects.exclude(status='NEW')
     
     if status:
         patients = patients.filter(status=status)
