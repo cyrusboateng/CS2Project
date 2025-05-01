@@ -2,17 +2,23 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from functools import wraps
 
-def is_neurologist(user):
-    """
-    Check if the user is a neurologist.
-    """
-    return user.is_authenticated and hasattr(user, 'userprofile') and user.userprofile.role == 'NEUROLOGIST'
+def is_neurologist(function):
+    @wraps(function)
+    def wrap(request, *args, **kwargs):
+        if request.user.is_authenticated and hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'NEUROLOGIST':
+            return function(request, *args, **kwargs)
+        messages.error(request, 'You must be a neurologist to access this page.')
+        return redirect('login')
+    return wrap
 
-def is_technician(user):
-    """
-    Check if the user is a technician.
-    """
-    return user.is_authenticated and hasattr(user, 'userprofile') and user.userprofile.role == 'TECHNICIAN'
+def is_technician(function):
+    @wraps(function)
+    def wrap(request, *args, **kwargs):
+        if request.user.is_authenticated and hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'TECHNICIAN':
+            return function(request, *args, **kwargs)
+        messages.error(request, 'You must be a technician to access this page.')
+        return redirect('login')
+    return wrap
 
 def role_required(role):
     """

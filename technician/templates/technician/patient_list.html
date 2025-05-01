@@ -1,9 +1,10 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Patient List - {{ block.super }}{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container py-4">
     <div class="row mb-4">
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -14,114 +15,87 @@
                         All Patients
                     {% endif %}
                 </h2>
-                <a href="{% url 'technician:patient_new' %}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> New Patient
+                <a href="{% url 'technician:patient_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Patient
                 </a>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a class="nav-link {% if not status %}active{% endif %}" 
-                               href="{% url 'technician:patient_list' %}">All</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if status == 'DRAFT' %}active{% endif %}" 
-                               href="?status=DRAFT">Drafts</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if status == 'SUBMITTED' %}active{% endif %}" 
-                               href="?status=SUBMITTED">Submitted</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if status == 'DIAGNOSED' %}active{% endif %}" 
-                               href="?status=DIAGNOSED">Diagnosed</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Status</th>
-                                    <th>NIHSS Score</th>
-                                    <th>Created</th>
-                                    <th>Last Updated</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for patient in page_obj %}
-                                <tr>
-                                    <td>{{ patient.first_name }} {{ patient.last_name }}</td>
-                                    <td>
-                                        <span class="badge {% if patient.status == 'DRAFT' %}bg-primary
-                                            {% elif patient.status == 'SUBMITTED' %}bg-warning
-                                            {% elif patient.status == 'DIAGNOSED' %}bg-success
-                                            {% else %}bg-secondary{% endif %}">
-                                            {{ patient.get_status_display }}
-                                        </span>
-                                    </td>
-                                    <td>{{ patient.nihss_score }}</td>
-                                    <td>{{ patient.created_at|date:"M d, Y" }}</td>
-                                    <td>{{ patient.updated_at|date:"M d, Y H:i" }}</td>
-                                    <td>
-                                        <a href="{% url 'technician:patient_detail' pk=patient.pk %}" 
-                                           class="btn btn-sm btn-info">View</a>
-                                        {% if patient.status == 'DRAFT' %}
-                                        <a href="{% url 'technician:patient_edit' pk=patient.pk %}" 
-                                           class="btn btn-sm btn-warning">Edit</a>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center">No patients found.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                {% if page_obj.has_other_pages %}
-                <div class="card-footer">
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination justify-content-center mb-0">
-                            {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status %}&status={{ status }}{% endif %}">
-                                    Previous
-                                </a>
-                            </li>
-                            {% endif %}
-                            
-                            {% for num in page_obj.paginator.page_range %}
-                            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                                <a class="page-link" href="?page={{ num }}{% if status %}&status={{ status }}{% endif %}">
-                                    {{ num }}
-                                </a>
-                            </li>
-                            {% endfor %}
-                            
-                            {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status %}&status={{ status }}{% endif %}">
-                                    Next
-                                </a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                </div>
-                {% endif %}
+    <div class="card">
+        <div class="card-body">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in page_obj %}
+                        <tr>
+                            <td>{{ patient.first_name }} {{ patient.last_name }}</td>
+                            <td>
+                                <span class="badge {% if patient.status == 'NEW' %}bg-warning
+                                    {% elif patient.status == 'SUBMITTED' %}bg-info
+                                    {% elif patient.status == 'DIAGNOSED' %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ patient.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ patient.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'technician:patient_detail' pk=patient.pk %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye me-1"></i>View
+                                    </a>
+                                    {% if patient.status == 'NEW' %}
+                                    <a href="{% url 'technician:patient_edit' pk=patient.pk %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit me-1"></i>Edit
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No patients found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status %}&status={{ status }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}{% if status %}&status={{ status }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status %}&status={{ status }}{% endif %}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <p class="text-muted text-center mb-0">No patients found. Click "New Patient" to add one.</p>
+            {% endif %}
         </div>
     </div>
 </div>

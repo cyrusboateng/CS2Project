@@ -2,13 +2,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.urls import reverse
 from .models import Patient, VitalSignsLog
 from .forms import PatientForm, VitalSignsLogForm
+from accounts.decorators import is_technician
 
 # Create your views here.
 
 @login_required
+@is_technician
 def dashboard(request):
     patients = Patient.objects.filter(technician=request.user).order_by('-created_at')
     paginator = Paginator(patients, 10)
@@ -24,15 +25,25 @@ def dashboard(request):
     return render(request, 'technician/dashboard.html', context)
 
 @login_required
-def patient_new(request):
+@is_technician
+def patient_create(request):
     if request.method == 'POST':
         form = PatientForm(request.POST)
         if form.is_valid():
             patient = form.save(commit=False)
             patient.technician = request.user
-            patient.status = 'SUBMITTED'  # Set status to SUBMITTED when creating
+            
+            # Set status based on action
+            action = request.POST.get('action', 'draft')
+            if action == 'submit':
+                patient.status = 'SUBMITTED'
+                success_message = 'Patient record created and submitted for neurologist review.'
+            else:
+                patient.status = 'NEW'
+                success_message = 'Patient record saved as draft.'
+            
             patient.save()
-            messages.success(request, 'Patient record created and submitted for neurologist review.')
+            messages.success(request, success_message)
             return redirect('technician:patient_detail', pk=patient.pk)
         else:
             messages.error(request, 'Please correct the errors below.')
@@ -42,6 +53,7 @@ def patient_new(request):
     return render(request, 'technician/patient_form.html', {'form': form, 'title': 'New Patient'})
 
 @login_required
+@is_technician
 def patient_edit(request, pk):
     patient = get_object_or_404(Patient, pk=pk, technician=request.user)
     
@@ -54,9 +66,18 @@ def patient_edit(request, pk):
         form = PatientForm(request.POST, instance=patient)
         if form.is_valid():
             patient = form.save(commit=False)
-            patient.status = 'SUBMITTED'  # Set status to SUBMITTED when updating
+            
+            # Set status based on action
+            action = request.POST.get('action', 'draft')
+            if action == 'submit':
+                patient.status = 'SUBMITTED'
+                success_message = 'Patient record updated and submitted for neurologist review.'
+            else:
+                patient.status = 'NEW'
+                success_message = 'Patient record saved as draft.'
+            
             patient.save()
-            messages.success(request, 'Patient record updated and submitted for neurologist review.')
+            messages.success(request, success_message)
             return redirect('technician:patient_detail', pk=patient.pk)
     else:
         form = PatientForm(instance=patient)
@@ -68,6 +89,7 @@ def patient_edit(request, pk):
     })
 
 @login_required
+@is_technician
 def patient_detail(request, pk):
     patient = get_object_or_404(Patient, pk=pk, technician=request.user)
     vital_signs_logs = patient.vital_signs_logs.order_by('-created_at')[:5]
@@ -90,6 +112,7 @@ def patient_detail(request, pk):
     })
 
 @login_required
+@is_technician
 def patient_list(request):
     patients = Patient.objects.filter(technician=request.user).order_by('-created_at')
     paginator = Paginator(patients, 10)
