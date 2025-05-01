@@ -2,50 +2,134 @@
 
 {% block title %}Login - {{ block.super }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    .auth-container {
+        min-height: calc(100vh - 100px);
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+    }
+    .auth-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+        border-radius: 15px;
+    }
+    .auth-card .card-header {
+        background: transparent;
+        border-bottom: none;
+        padding-top: 2rem;
+    }
+    .auth-card .card-body {
+        padding: 2rem;
+    }
+    .auth-title {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+    .form-control {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s;
+    }
+    .form-control:focus {
+        border-color: #4a90e2;
+        box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+    }
+    .btn-auth {
+        padding: 0.75rem;
+        font-weight: 600;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        border: none;
+        transition: all 0.3s;
+    }
+    .btn-auth:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+    }
+    .auth-footer {
+        margin-top: 2rem;
+        color: #6c757d;
+    }
+    .auth-footer a {
+        color: #4a90e2;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+    .platform-info {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-top: 2rem;
+    }
+    .platform-info p {
+        color: #495057;
+        line-height: 1.6;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h2 class="text-center">Login</h2>
-            </div>
-            <div class="card-body">
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-                <form method="post">
-                    {% csrf_token %}
-                    {% for field in form %}
-                        <div class="mb-3">
-                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.errors %}
-                                <div class="text-danger">
-                                    {{ field.errors }}
-                                </div>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">Login</button>
+<div class="auth-container py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card auth-card">
+                    <div class="card-header text-center">
+                        <h1 class="auth-title">Welcome Back</h1>
                     </div>
-                </form>
-                <div class="mt-3 text-center">
-                    <p>Don't have an account? <a href="{% url 'accounts:register' %}">Register here</a></p>
+                    <div class="card-body">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            {% for field in form %}
+                                <div class="mb-4">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-medium">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="text-danger mt-1 small">
+                                            {{ field.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary btn-auth">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="auth-footer text-center">
+                            <p>Don't have an account? <a href="{% url 'accounts:register' %}">Create one now</a></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="platform-info text-center">
+                    <p>NeuroLinkMSU connects mobile stroke technicians with remote neurologists for real-time consultation, improving patient outcomes through rapid response and expert guidance.</p>
                 </div>
             </div>
         </div>
     </div>
-    <div class="mt-4">
-        <div class="text-center">
-            <p class="fs-5 fw-light" style="font-family: monospace;">
-                NeuroLinkMSU is a remote stroke consultation platform that enables mobile stroke technicians to collect and transmit patient data to remote neurologists for real-time consultation and guidance. It improves patient outcomes and reduces treatment times, making it ideal for mobile stroke units and telemedicine scenarios.
-            </p>
-        </div>
-    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 {% endblock %}
