@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import logout
 from .models import UserProfile
-from .forms import UserProfileForm
+from .forms import UserProfileForm, UserCreationForm
 
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
@@ -17,14 +17,12 @@ def register(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Create UserProfile for the new user
-            UserProfile.objects.create(user=user)
+            # Get or create UserProfile for the new user
+            UserProfile.objects.get_or_create(user=user)
             messages.success(request, 'Account created successfully. You can now log in.')
             return redirect('accounts:login')
     else:
         form = UserCreationForm()
-        for field in form.fields.values():
-            field.widget.attrs['class'] = 'form-control'
     return render(request, 'accounts/register.html', {'form': form})
 
 @login_required
