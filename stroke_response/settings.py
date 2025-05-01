@@ -26,10 +26,12 @@ SECRET_KEY = 'django-insecure-(324ir))$s^9%4c9*z6w0#zg+%6^v*u(tpa05pqu2b)nmx*a5v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
-
-# Port configuration
+# Deployment settings
 PORT = int(os.environ.get('PORT', 10000))
+HOST = os.environ.get('HOST', '0.0.0.0')
+
+# Allow all hosts during development, configure properly in production
+ALLOWED_HOSTS = ['*', f'{HOST}:{PORT}', 'localhost', '127.0.0.1']
 
 
 # Application definition

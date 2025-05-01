@@ -2,8 +2,12 @@ services:
   - type: web
     name: neurologist
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: bash ./start.sh
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate --noinput
+    startCommand: |
+      gunicorn stroke_response.wsgi:application --bind=0.0.0.0:$PORT --workers=2 --threads=4 --worker-class=gthread --log-level=debug
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
@@ -11,4 +15,6 @@ services:
         value: False
       - key: PORT
         value: 10000
+      - key: PYTHONUNBUFFERED
+        value: true
     staticPublishPath: ./staticfiles
