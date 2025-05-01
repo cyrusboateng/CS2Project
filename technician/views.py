@@ -6,10 +6,12 @@ from django.utils import timezone
 from django.db.models import Prefetch
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.contrib.auth.models import Group
 from .models import Patient, VitalSignsLog, CTScan
 from .forms import PatientForm, VitalSignsLogForm
 from accounts.decorators import is_technician
 from neurologist.models import Consultation
+from notifications.utils import send_notification
 
 # Create your views here.
 
@@ -56,6 +58,19 @@ def patient_create(request):
                 success_message = 'Patient record saved as draft.'
             
             patient.save()
+            
+            # Send notification to neurologists if submitted
+            if action == 'submit':
+                neurologist_group = Group.objects.get(name='Neurologist')
+                for neurologist in neurologist_group.user_set.all():
+                    send_notification(
+                        user=neurologist,
+                        notification_type='update',
+                        title='New Patient Case',
+                        message=f'A new patient case has been submitted by {request.user.get_full_name() or request.user.username}.',
+                        content_object=patient
+                    )
+            
             messages.success(request, success_message)
             return redirect('technician:patient_detail', pk=patient.pk)
         else:
@@ -90,6 +105,19 @@ def patient_edit(request, pk):
                 success_message = 'Patient record saved as draft.'
             
             patient.save()
+            
+            # Send notification to neurologists if submitted
+            if action == 'submit':
+                neurologist_group = Group.objects.get(name='Neurologist')
+                for neurologist in neurologist_group.user_set.all():
+                    send_notification(
+                        user=neurologist,
+                        notification_type='update',
+                        title='Patient Case Updated',
+                        message=f'A patient case has been updated and resubmitted by {request.user.get_full_name() or request.user.username}.',
+                        content_object=patient
+                    )
+            
             messages.success(request, success_message)
             return redirect('technician:patient_detail', pk=patient.pk)
     else:
@@ -104,49 +132,71 @@ def patient_edit(request, pk):
 @login_required
 @user_passes_test(is_technician)
 def patient_detail(request, pk):
-    patient = get_object_or_404(
-        Patient.objects.prefetch_related(
-            Prefetch(
-                'consultations',
-                queryset=Consultation.objects.select_related('neurologist').order_by('-created_at')
-            ),
-            'vital_signs_logs',
-            'ct_scans'
-        ),
-        pk=pk
-    )
+    patient = get_object_or_404(Patient, pk=pk, technician=request.user)
     
     if request.method == 'POST':
-        if 'submit_case' in request.POST and patient.status == 'NEW':
-            patient.status = 'SUBMITTED'
-            patient.submitted_at = timezone.now()
-            patient.save()
-            messages.success(request, 'Case submitted successfully.')
-            return redirect('technician:dashboard')
-            
-        elif 'update_nihss' in request.POST:
+        if 'update_nihss' in request.POST:
             patient.nihss = request.POST.get('nihss', '')
             patient.save()
+            
+            # Send notification to neurologists if case is already submitted
+            if patient.status != 'NEW':
+                try:
+                    neurologist_group = Group.objects.get(name='Neurologist')
+                    for neurologist in neurologist_group.user_set.all():
+                        send_notification(
+                            user=neurologist,
+                            notification_type='update',
+                            title='NIHSS Score Updated',
+                            message=f'NIHSS score has been updated for patient {patient.first_name} {patient.last_name}.',
+                            content_object=patient
+                        )
+                except Group.DoesNotExist:
+                    # Log this as a warning but don't fail the update
+                    messages.warning(request, 'Could not notify neurologists - group not found')
+            
             messages.success(request, 'NIHSS details updated successfully.')
             return redirect('technician:patient_detail', pk=pk)
             
         elif 'upload_ct_scan' in request.POST and request.FILES.get('ct_scan'):
             try:
-                CTScan.objects.create(
+                ct_scan = CTScan.objects.create(
                     patient=patient,
                     image=request.FILES['ct_scan'],
                     date_taken=request.POST['date_taken'],
                     description=request.POST.get('description', '')
                 )
+                
+                # Send notification to neurologists if case is already submitted
+                if patient.status != 'NEW':
+                    try:
+                        neurologist_group = Group.objects.get(name='Neurologist')
+                        for neurologist in neurologist_group.user_set.all():
+                            send_notification(
+                                user=neurologist,
+                                notification_type='update',
+                                title='New CT Scan Added',
+                                message=f'A new CT scan has been uploaded for patient {patient.first_name} {patient.last_name}.',
+                                content_object=ct_scan
+                            )
+                    except Group.DoesNotExist:
+                        # Log this as a warning but don't fail the upload
+                        messages.warning(request, 'Could not notify neurologists - group not found')
+                
                 messages.success(request, 'CT scan uploaded successfully.')
             except Exception as e:
                 messages.error(request, f'Error uploading CT scan: {str(e)}')
             return redirect('technician:patient_detail', pk=pk)
     
     vital_signs = patient.vital_signs_logs.all()[:5]
+    ct_scans = patient.ct_scans.all().order_by('-date_taken')
+    consultations = patient.consultations.all().order_by('-created_at')
+    
     context = {
         'patient': patient,
         'vital_signs': vital_signs,
+        'ct_scans': ct_scans,
+        'consultations': consultations,
     }
     return render(request, 'technician/patient_detail.html', context)
 

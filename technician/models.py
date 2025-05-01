@@ -63,6 +63,35 @@ class Patient(models.Model):
 
     def get_absolute_url(self):
         return reverse('technician:patient_detail', kwargs={'pk': self.pk})
+    
+    def is_critical(self):
+        """Check if patient's condition is critical based on vital signs and NIHSS score."""
+        # Check vital signs against critical thresholds
+        if (
+            self.blood_pressure_systolic > 220 or self.blood_pressure_systolic < 90 or
+            self.blood_pressure_diastolic > 120 or self.blood_pressure_diastolic < 60 or
+            self.heart_rate > 130 or self.heart_rate < 50 or
+            self.respiratory_rate > 30 or self.respiratory_rate < 10 or
+            self.temperature > 39.5 or self.temperature < 35.0 or
+            self.oxygen_saturation < 90 or
+            self.glasgow_coma_scale < 13
+        ):
+            return True
+        
+        # Check latest vital signs log if available
+        latest_vitals = self.vital_signs_logs.first()
+        if latest_vitals and (
+            latest_vitals.blood_pressure_systolic > 220 or latest_vitals.blood_pressure_systolic < 90 or
+            latest_vitals.blood_pressure_diastolic > 120 or latest_vitals.blood_pressure_diastolic < 60 or
+            latest_vitals.heart_rate > 130 or latest_vitals.heart_rate < 50 or
+            latest_vitals.respiratory_rate > 30 or latest_vitals.respiratory_rate < 10 or
+            latest_vitals.temperature > 39.5 or latest_vitals.temperature < 35.0 or
+            latest_vitals.oxygen_saturation < 90 or
+            latest_vitals.glasgow_coma_scale < 13
+        ):
+            return True
+        
+        return False
 
 class VitalSignsLog(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='vital_signs_logs')

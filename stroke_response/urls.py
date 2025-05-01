@@ -26,6 +26,7 @@ urlpatterns = [
     path('accounts/', include(('accounts.urls', 'accounts'), namespace='accounts')),
     path('technician/', include(('technician.urls', 'technician'), namespace='technician')),
     path('neurologist/', include(('neurologist.urls', 'neurologist'), namespace='neurologist')),
+    path('notifications/', include(('notifications.urls', 'notifications'), namespace='notifications')),
 ]
 
 if settings.DEBUG:

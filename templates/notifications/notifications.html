@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Notifications</h2>
+    <div class="list-group">
+        {% for notification in notifications %}
+            <div class="list-group-item {% if not notification.is_read %}list-group-item-primary{% endif %}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">{{ notification.title }}</h5>
+                    <small>{{ notification.created_at|timesince }} ago</small>
+                </div>
+                <p class="mb-1">{{ notification.message }}</p>
+                {% if notification.content_object %}
+                    <small>
+                        <a href="{{ notification.content_object.get_absolute_url }}" class="text-muted">
+                            View Details
+                        </a>
+                    </small>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="list-group-item">
+                <p class="mb-0">No notifications yet.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
