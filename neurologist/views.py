@@ -1,4 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import JsonResponse
+from technician.models import Patient
+from .models import Consultation, Treatment
+from .forms import ConsultationForm, TreatmentForm
+from django.db.models import Q
+from notifications.utils import create_notification
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -8,6 +16,113 @@ from .forms import ConsultationForm
 
 def is_neurologist(user):
     return user.is_authenticated and hasattr(user, 'userprofile') and user.userprofile.role == 'NEUROLOGIST'
+
+@login_required
+def dashboard(request):
+    # Get all critical patients
+    critical_patients = Patient.objects.filter(
+        Q(status='SUBMITTED') | Q(status='REVIEWED')
+    ).filter(consultations__isnull=True)
+    
+    critical_patients = [p for p in critical_patients if p.is_critical()]
+    
+    # Get active consultations
+    active_consultations = Consultation.objects.filter(
+        neurologist=request.user,
+        status='IN_PROGRESS'
+    ).select_related('patient')
+    
+    # Get completed consultations
+    completed_consultations = Consultation.objects.filter(
+        neurologist=request.user,
+        status='COMPLETED'
+    ).select_related('patient').order_by('-updated_at')[:5]
+    
+    context = {
+        'critical_patients': critical_patients,
+        'active_consultations': active_consultations,
+        'completed_consultations': completed_consultations,
+    }
+    
+    return render(request, 'neurologist/dashboard.html', context)
+
+@login_required
+def patient_detail(request, patient_id):
+    patient = get_object_or_404(Patient, id=patient_id)
+    
+    # Get or create consultation
+    consultation, created = Consultation.objects.get_or_create(
+        patient=patient,
+        defaults={'neurologist': request.user, 'status': 'IN_PROGRESS'}
+    )
+    
+    if request.method == 'POST':
+        form = ConsultationForm(request.POST, instance=consultation)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Consultation updated successfully.')
+            return redirect('neurologist:dashboard')
+    else:
+        form = ConsultationForm(instance=consultation)
+    
+    # Get NIHSS scores
+    nihss_scores = patient.nihss_scores.all().order_by('-timestamp')
+    
+    # Get vital signs
+    vital_signs = patient.vital_signs_logs.all().order_by('-timestamp')
+    
+    # Get treatments
+    treatments = consultation.treatments.all().order_by('-administration_time')
+    
+    context = {
+        'patient': patient,
+        'consultation': consultation,
+        'form': form,
+        'nihss_scores': nihss_scores,
+        'vital_signs': vital_signs,
+        'treatments': treatments,
+        'treatment_form': TreatmentForm(),
+    }
+    
+    return render(request, 'neurologist/patient_detail.html', context)
+
+@login_required
+def administer_treatment(request, consultation_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+    consultation = get_object_or_404(Consultation, id=consultation_id)
+    
+    form = TreatmentForm(request.POST)
+    if form.is_valid():
+        treatment = consultation.administer_treatment(
+            treatment_type=form.cleaned_data['treatment_type'],
+            medication_name=form.cleaned_data['medication_name'],
+            dosage=form.cleaned_data['dosage'],
+            notes=form.cleaned_data['notes'],
+            administered_by=request.user
+        )
+        
+        # Create notification for technician
+        create_notification(
+            recipient=consultation.patient.technician,
+            title='Treatment Administered',
+            message=f'Treatment {treatment.get_treatment_type_display()} has been administered to patient {consultation.patient}',
+            link=f'/technician/patient/{consultation.patient.id}/'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Treatment administered successfully',
+            'treatment': {
+                'type': treatment.get_treatment_type_display(),
+                'medication': treatment.medication_name,
+                'dosage': treatment.dosage,
+                'time': treatment.administration_time.strftime('%Y-%m-%d %H:%M:%S'),
+            }
+        })
+    
+    return JsonResponse({'error': form.errors}, status=400)
 
 @login_required
 @user_passes_test(is_neurologist)

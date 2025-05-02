@@ -88,7 +88,7 @@ ASGI_APPLICATION = 'stroke_response.asgi.application'
 # Channels configuration
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     }
 }
 
@@ -153,7 +153,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = []
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 # Create static directory if it doesn't exist
 if not os.path.exists(os.path.join(BASE_DIR, 'static')):
