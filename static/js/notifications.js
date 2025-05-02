@@ -224,3 +224,25 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+function setupWebSocket() {
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/notifications/');
+
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        if (data.type === 'notification') {
+            showNotification(data.notification);
+        }
+    };
+
+    document.querySelectorAll('.toast').forEach(toast => {
+        toast.addEventListener('hidden.bs.toast', function() {
+            const notificationId = this.getAttribute('data-notification-id');
+            if (notificationId) {
+                socket.send(JSON.stringify({type: 'read', notification_id: notificationId}));
+            }
+        });
+    });
+}
+
+setupWebSocket();

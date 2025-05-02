@@ -53,6 +53,20 @@
     animation: pulse 1s infinite;
 }
 
+/* Added unique styling for critical alerts */
+.critical-alert {
+    background-color: rgba(220, 53, 69, 0.1);
+    border-left: 5px solid #dc3545;
+    animation: pulse 2s infinite;
+}
+
+/* Ensuring critical alerts have a persistent style */
+.persistent-alert {
+    animation: none;
+    background-color: rgba(220, 53, 69, 0.2);
+    border-left: 5px solid #dc3545;
+}
+
 /* Toast Overrides for Critical Alerts */
 .toast.emergency-pulse {
     border: none !important;

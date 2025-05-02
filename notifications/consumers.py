@@ -26,3 +26,13 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
             "type": "notification",
             "notification": event["notification"]
         })
+
+    async def receive_json(self, content, **kwargs):
+        notification_type = content.get("type", None)
+        if notification_type == "read":
+            notification_id = content.get("notification_id")
+            if notification_id:
+                await self.mark_as_read(notification_id)
+
+    async def mark_as_read(self, notification_id):
+        await database_sync_to_async(Notification.objects.filter(id=notification_id, recipient=self.scope['user']).update)(is_read=True)
