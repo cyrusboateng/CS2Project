@@ -52,10 +52,17 @@ def patient_create(request):
             action = request.POST.get('action', 'draft')
             if action == 'submit':
                 patient.status = 'SUBMITTED'
-                success_message = 'Patient record created and submitted for neurologist review.'
+                # Use error level for critical patients to highlight urgency
+                if patient.is_critical():
+                    success_message = '⚠️ Critical patient record created and submitted for immediate neurologist review.'
+                    message_level = messages.ERROR
+                else:
+                    success_message = 'Patient record created and submitted for neurologist review.'
+                    message_level = messages.SUCCESS
             else:
                 patient.status = 'NEW'
                 success_message = 'Patient record saved as draft.'
+                message_level = messages.SUCCESS
             
             patient.save()
             
@@ -63,16 +70,21 @@ def patient_create(request):
             if action == 'submit':
                 neurologist_group = Group.objects.get(name='Neurologist')
                 for neurologist in neurologist_group.user_set.all():
+                    # Send critical notification if patient has critical indicators
+                    notification_type = 'critical' if patient.is_critical() else 'update'
+                    message = f'A new patient case has been submitted by {request.user.get_full_name() or request.user.username}.'
+                    if patient.is_critical():
+                        message += ' ⚠️ This patient requires immediate attention!'
+                    
                     send_notification(
                         user=neurologist,
-                        notification_type='update',
-                        title='New Patient Case',
-                        message=f'A new patient case has been submitted by {request.user.get_full_name() or request.user.username}.',
-                        content_object=patient
+                        notification_type=notification_type,
+                        title='New Patient Case - CRITICAL' if patient.is_critical() else 'New Patient Case',
+                        message=message
                     )
             
-            messages.success(request, success_message)
-            return redirect('technician:patient_detail', pk=patient.pk)
+            messages.add_message(request, message_level, success_message)
+            return redirect('technician:dashboard')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
@@ -119,7 +131,7 @@ def patient_edit(request, pk):
                     )
             
             messages.success(request, success_message)
-            return redirect('technician:patient_detail', pk=patient.pk)
+            return redirect('technician:dashboard')
     else:
         form = PatientForm(instance=patient)
     
@@ -215,8 +227,26 @@ def patient_delete(request, pk):
     patient = get_object_or_404(Patient, pk=pk, technician=request.user)
     
     if request.method == 'POST':
+        patient_name = f'{patient.first_name} {patient.last_name}'
+        was_critical = patient.is_critical()
+        
+        # If patient was critical, notify neurologists about the deletion
+        if was_critical:
+            neurologist_group = Group.objects.get(name='Neurologist')
+            for neurologist in neurologist_group.user_set.all():
+                send_notification(
+                    user=neurologist,
+                    notification_type='info',
+                    title='Critical Patient Case Removed',
+                    message=f'A critical patient case ({patient_name}) has been removed by {request.user.get_full_name() or request.user.username}.'
+                )
+        
         patient.delete()
-        messages.success(request, f'Patient {patient.first_name} {patient.last_name} has been deleted successfully.')
-        return redirect('technician:patient_list')
+        if was_critical:
+            # Use warning level for critical patient deletion
+            messages.warning(request, f'⚠️ Critical patient {patient_name} has been deleted.')
+        else:
+            messages.success(request, f'Patient {patient_name} has been deleted successfully.')
+        return redirect('technician:dashboard')
     
     return render(request, 'technician/patient_confirm_delete.html', {'patient': patient})

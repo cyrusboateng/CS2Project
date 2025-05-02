@@ -4,6 +4,17 @@
 
 {% block extra_css %}
     <style>
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+
+    .critical-alert {
+        animation: pulse 2s infinite;
+        border-left: 5px solid #dc3545;
+    }
+
     .nihss-badge {
         font-size: 1rem;
         padding: 0.5rem;
@@ -113,7 +124,10 @@
     {% if messages %}
     <div class="alerts-section mb-4">
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <div class="alert {% if message.tags == 'error' %}alert-danger critical-alert pulse{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {% if message.tags == 'error' %}
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {% endif %}
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>

@@ -26,9 +26,18 @@ def dashboard(request):
     
     critical_patients = [p for p in critical_patients if p.is_critical()]
     
-    # Add alert message if there are critical patients
+    # Add alert message and notification if there are critical patients
     if critical_patients:
-        messages.warning(request, f'There are {len(critical_patients)} critical patients requiring immediate attention!')
+        alert_message = f'There are {len(critical_patients)} critical patients requiring immediate attention!'
+        messages.error(request, alert_message)  # Using error level for more prominent display
+        
+        # Create a critical notification
+        send_notification(
+            user=request.user,
+            title='Critical Patients Alert',
+            message=alert_message,
+            notification_type='critical'
+        )
     
     # Get active consultations
     active_consultations = Consultation.objects.filter(
@@ -64,7 +73,11 @@ def patient_detail(request, patient_id):
         form = ConsultationForm(request.POST, instance=consultation)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Consultation updated successfully.')
+            # Check if patient is critical
+            if patient.is_critical():
+                messages.error(request, f'⚠️ Consultation updated for critical patient {patient.first_name} {patient.last_name}. Immediate attention required!')
+            else:
+                messages.success(request, f'Consultation updated for patient {patient.first_name} {patient.last_name}.')
             return redirect('neurologist:dashboard')
     else:
         form = ConsultationForm(instance=consultation)
@@ -195,8 +208,11 @@ def start_consultation(request, patient_id):
             patient.status = 'DIAGNOSED'
             patient.save()
             
-            messages.success(request, 'Consultation completed successfully.')
-            return redirect('neurologist:consultation_detail', pk=consultation.pk)
+            if patient.is_critical():
+                messages.error(request, f'⚠️ Consultation completed for critical patient {patient.first_name} {patient.last_name}.')
+            else:
+                messages.success(request, f'Consultation completed for patient {patient.first_name} {patient.last_name}.')
+            return redirect('neurologist:dashboard')
     else:
         form = ConsultationForm()
     
