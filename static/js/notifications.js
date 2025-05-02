@@ -16,19 +16,73 @@ function initializeNotifications() {
     updateNotificationBadge();
 }
 
+// Create audio context for critical alerts
+let audioContext = null;
+
+function initAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+function playAlertSound() {
+    if (!audioContext) return;
+    
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
+    
+    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+}
+
 function showNotification(notification) {
+    const isCritical = notification.notification_type === 'critical';
+    
+    // Play sound for critical notifications
+    if (isCritical) {
+        initAudioContext();
+        playAlertSound();
+    }
+    
     // Create notification element
     const toastHtml = `
-        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-notification-id="${notification.id}">
-            <div class="toast-header ${notification.notification_type === 'critical' ? 'bg-danger text-white' : ''}">
-                <strong class="me-auto">${notification.title}</strong>
-                <small class="text-muted">just now</small>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        <div class="toast ${isCritical ? 'critical' : ''}" 
+             role="alert" 
+             aria-live="${isCritical ? 'assertive' : 'polite'}" 
+             aria-atomic="true" 
+             data-notification-id="${notification.id}">
+            <div class="toast-header">
+                ${isCritical ? '<i class="fas fa-exclamation-triangle me-2"></i>' : ''}
+                <strong class="me-auto">
+                    ${isCritical ? '⚠️ CRITICAL ALERT' : notification.title}
+                </strong>
+                <small class="${isCritical ? 'text-white' : 'text-muted'}">just now</small>
+                <button type="button" 
+                        class="btn-close" 
+                        data-bs-dismiss="toast" 
+                        aria-label="Close"></button>
             </div>
             <div class="toast-body">
+                ${isCritical ? '<strong>' : ''}
                 ${notification.message}
+                ${isCritical ? '</strong>' : ''}
                 ${notification.link ? 
-                    `<br><a href="${notification.link}" class="btn btn-sm btn-primary mt-2">View Details</a>` 
+                    `<div class="mt-2 pt-2 ${isCritical ? 'border-top border-danger' : 'border-top'}">
+                        <a href="${notification.link}" 
+                           class="btn ${isCritical ? 'btn-danger' : 'btn-primary'} btn-sm">
+                           <i class="fas fa-${isCritical ? 'ambulance' : 'eye'} me-1"></i>
+                           View Patient
+                        </a>
+                    </div>` 
                     : ''}
             </div>
         </div>

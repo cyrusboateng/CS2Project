@@ -3,6 +3,35 @@
 
 {% block title %}{{ title }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    .nihss-score {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    
+    .nihss-mild { color: #28a745; }
+    .nihss-moderate { color: #ffc107; }
+    .nihss-severe { color: #dc3545; }
+    .nihss-very-severe { color: #6c1827; }
+    
+    .critical-indicator {
+        animation: pulse-text 2s infinite;
+    }
+    
+    @keyframes pulse-text {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .treatment-history {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
     <div class="row justify-content-center">
@@ -15,9 +44,34 @@
                     </a>
                 </div>
                 <div class="card-body">
+                    <!-- Critical Alert -->
+                    {% if patient.is_critical %}
+                    <div class="alert alert-danger mb-4" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                            <div>
+                                <h4 class="alert-heading mb-1">Critical Patient Alert</h4>
+                                <p class="mb-0">
+                                    {% if patient.has_critical_vitals %}
+                                    <span class="badge bg-danger me-2">Critical Vital Signs</span>
+                                    {% endif %}
+                                    {% if patient.has_critical_nihss %}
+                                    <span class="badge bg-danger">Severe Stroke Indicators</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% if not consultation.status == 'COMPLETED' %}
+                            <a href="#treatmentForm" class="btn btn-danger ms-auto">
+                                <i class="fas fa-pills me-2"></i>Begin Treatment
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     <!-- Patient Information -->
                     <div class="row mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <h5 class="mb-3">Patient Information</h5>
                             <table class="table table-sm">
                                 <tr>
@@ -34,7 +88,7 @@
                                 </tr>
                             </table>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <h5 class="mb-3">Vital Signs</h5>
                             <table class="table table-sm">
                                 <tr>
@@ -51,6 +105,37 @@
                                 </tr>
                             </table>
                         </div>
+                        <div class="col-md-4">
+                            <h5 class="mb-3">NIHSS Assessment</h5>
+                            {% with score=patient.get_latest_nihss_score %}
+                            {% if score %}
+                            <div class="text-center p-3 border rounded">
+                                <div class="nihss-score 
+                                    {% if score <= 4 %}nihss-mild
+                                    {% elif score <= 15 %}nihss-moderate
+                                    {% elif score <= 25 %}nihss-severe
+                                    {% else %}nihss-very-severe{% endif %}">
+                                    {{ score }}
+                                </div>
+                                <div class="mt-2">
+                                    {% if score <= 4 %}
+                                    <span class="badge bg-success">Minor Stroke</span>
+                                    {% elif score <= 15 %}
+                                    <span class="badge bg-warning text-dark">Moderate Stroke</span>
+                                    {% elif score <= 25 %}
+                                    <span class="badge bg-danger">Severe Stroke</span>
+                                    {% else %}
+                                    <span class="badge bg-dark">Very Severe Stroke</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-center p-3 border rounded">
+                                <p class="text-muted mb-0">No NIHSS score available</p>
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
                     </div>
 
                     <!-- Chief Complaint -->
@@ -59,9 +144,89 @@
                         <p class="border rounded p-3 bg-light">{{ patient.chief_complaint }}</p>
                     </div>
 
+                    <!-- Treatment History -->
+                    <div class="mb-4">
+                        <h5>Treatment History</h5>
+                        <div class="card">
+                            <div class="card-body treatment-history">
+                                {% if consultation.treatments.exists %}
+                                <div class="timeline">
+                                    {% for treatment in consultation.treatments.all %}
+                                    <div class="timeline-item pb-3 {% if not forloop.last %}border-start border-2 border-primary ps-3 mb-3{% endif %}">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold mb-0">
+                                                <i class="fas fa-pills text-primary me-2"></i>
+                                                {{ treatment.get_treatment_type_display }}
+                                            </h6>
+                                            <small class="text-muted">{{ treatment.administered_at|date:"M d, Y H:i" }}</small>
+                                        </div>
+                                        <div class="card bg-light">
+                                            <div class="card-body py-2">
+                                                <p class="mb-1"><strong>Medication:</strong> {{ treatment.medication_name }}</p>
+                                                <p class="mb-1"><strong>Dosage:</strong> {{ treatment.dosage }}</p>
+                                                {% if treatment.notes %}
+                                                <p class="mb-0"><strong>Notes:</strong> {{ treatment.notes }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Administered by Dr. {{ treatment.administered_by.get_full_name }}</small>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-muted mb-0">No treatments administered yet.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Treatment Form -->
+                    {% if not consultation.status == 'COMPLETED' %}
+                    <div class="mb-4" id="treatmentForm">
+                        <h5>Administer Treatment</h5>
+                        <div class="card">
+                            <div class="card-body">
+                                <form method="post" action="{% url 'neurologist:administer_treatment' consultation.pk %}">
+                                    {% csrf_token %}
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Treatment Type</label>
+                                            <select name="treatment_type" class="form-select" required>
+                                                <option value="">Select Treatment Type</option>
+                                                <option value="TPA">Tissue Plasminogen Activator (tPA)</option>
+                                                <option value="ANTICOAGULANT">Anticoagulant Therapy</option>
+                                                <option value="ANTIPLATELET">Antiplatelet Therapy</option>
+                                                <option value="ANTIHYPERTENSIVE">Antihypertensive Medication</option>
+                                                <option value="OTHER">Other Treatment</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Medication Name</label>
+                                            <input type="text" name="medication_name" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Dosage</label>
+                                        <input type="text" name="dosage" class="form-control" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Treatment Notes</label>
+                                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                                    </div>
+                                    <div class="text-end">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-pills me-2"></i>Administer Treatment
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Consultation Details -->
                     <div class="mb-4">
-                        <h5>Consultation Details</h5>
+                        <h5>Consultation Notes</h5>
                         <div class="card">
                             <div class="card-body">
                                 <div class="mb-4">
@@ -72,11 +237,6 @@
                                 <div class="mb-4">
                                     <h6 class="fw-bold">Treatment Plan</h6>
                                     <p class="mb-0">{{ consultation.treatment_plan }}</p>
-                                </div>
-
-                                <div class="mb-4">
-                                    <h6 class="fw-bold">Medications</h6>
-                                    <p class="mb-0">{{ consultation.medications }}</p>
                                 </div>
 
                                 <div class="mb-4">

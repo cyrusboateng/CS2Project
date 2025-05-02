@@ -2,9 +2,99 @@
 
 {% block title %}Neurologist Dashboard - {{ block.super }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    .critical-alert {
+        animation: pulse-bg 2s infinite;
+    }
+    
+    @keyframes pulse-bg {
+        0% { background-color: rgba(220, 53, 69, 0.1); }
+        50% { background-color: rgba(220, 53, 69, 0.2); }
+        100% { background-color: rgba(220, 53, 69, 0.1); }
+    }
+    
+    .nihss-badge {
+        font-size: 1rem;
+        padding: 0.5rem;
+    }
+    
+    .nihss-mild { background-color: #28a745; }
+    .nihss-moderate { background-color: #ffc107; color: #000; }
+    .nihss-severe { background-color: #dc3545; }
+    .nihss-very-severe { background-color: #6c1827; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <h2>Neurologist Dashboard</h2>
+    
+    <!-- Critical Alerts Section -->
+    {% if critical_patients %}
+    <div class="card border-danger mb-4">
+        <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Critical Patients Requiring Immediate Attention
+            </h5>
+            <span class="badge bg-white text-danger">{{ critical_patients|length }}</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>NIHSS Score</th>
+                            <th>Critical Indicators</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in critical_patients %}
+                        <tr class="critical-alert">
+                            <td>
+                                <strong>{{ patient.first_name }} {{ patient.last_name }}</strong><br>
+                                <small class="text-muted">Age: {{ patient.age }}, Gender: {{ patient.get_gender_display }}</small>
+                            </td>
+                            <td>
+                                {% with score=patient.get_latest_nihss_score %}
+                                {% if score %}
+                                <span class="badge nihss-badge 
+                                    {% if score <= 4 %}nihss-mild
+                                    {% elif score <= 15 %}nihss-moderate
+                                    {% elif score <= 25 %}nihss-severe
+                                    {% else %}nihss-very-severe{% endif %}">
+                                    NIHSS: {{ score }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% if patient.has_critical_vitals %}
+                                    <li><i class="fas fa-heartbeat text-danger me-1"></i> Critical Vital Signs</li>
+                                    {% endif %}
+                                    {% if patient.has_critical_nihss %}
+                                    <li><i class="fas fa-brain text-danger me-1"></i> Severe Stroke Indicators</li>
+                                    {% endif %}
+                                </ul>
+                            </td>
+                            <td>
+                                <a href="{% url 'neurologist:start_consultation' patient.id %}" 
+                                   class="btn btn-danger btn-sm">
+                                    <i class="fas fa-stethoscope me-1"></i>
+                                    Begin Treatment
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Statistics Cards -->
     <div class="row mb-4">
@@ -83,18 +173,50 @@
                     <tbody>
                         {% for consultation in consultations %}
                         <tr>
-                            <td>{{ consultation.patient.first_name }} {{ consultation.patient.last_name }}</td>
+                            <td>
+                                <strong>{{ consultation.patient.first_name }} {{ consultation.patient.last_name }}</strong>
+                                {% with score=consultation.patient.get_latest_nihss_score %}
+                                {% if score %}
+                                <br>
+                                <span class="badge nihss-badge 
+                                    {% if score <= 4 %}nihss-mild
+                                    {% elif score <= 15 %}nihss-moderate
+                                    {% elif score <= 25 %}nihss-severe
+                                    {% else %}nihss-very-severe{% endif %}">
+                                    NIHSS: {{ score }}
+                                </span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
                             <td>
                                 <span class="badge {% if consultation.status == 'IN_PROGRESS' %}bg-info
                                                  {% elif consultation.status == 'COMPLETED' %}bg-success
-                                                 {% else %}bg-secondary{% endif %}">
+                                                 {% else %}bg-warning{% endif %}">
                                     {{ consultation.get_status_display }}
                                 </span>
+                                {% if consultation.patient.is_critical %}
+                                <span class="badge bg-danger ms-1">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Critical
+                                </span>
+                                {% endif %}
                             </td>
                             <td>{{ consultation.updated_at|date:"M d, Y H:i" }}</td>
                             <td>
-                                <a href="{% url 'neurologist:consultation_detail' consultation.pk %}" 
-                                   class="btn btn-sm btn-info">View Details</a>
+                                <div class="btn-group">
+                                    <a href="{% url 'neurologist:consultation_detail' consultation.pk %}" 
+                                       class="btn btn-sm btn-info">
+                                       <i class="fas fa-eye me-1"></i>
+                                       View
+                                    </a>
+                                    {% if consultation.status != 'COMPLETED' %}
+                                    <a href="{% url 'neurologist:administer_treatment' consultation.pk %}" 
+                                       class="btn btn-sm btn-success">
+                                       <i class="fas fa-pills me-1"></i>
+                                       Treat
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% empty %}
