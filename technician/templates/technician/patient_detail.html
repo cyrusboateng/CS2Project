@@ -225,14 +225,90 @@
                 </div>
                 <div class="card-body">
                     <div class="collapse mb-3" id="nihssForm">
-                        <form method="post" class="border rounded p-3 bg-light">
+                        <form method="post" class="border rounded p-3 bg-light" id="nihssScoreForm">
                             {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="nihss" class="form-label">NIHSS Details</label>
-                                <textarea class="form-control" id="nihss" name="nihss" rows="4">{{ patient.nihss }}</textarea>
-                                <div class="form-text">Enter the NIHSS score and any relevant details about the assessment.</div>
+                            <!-- NIHSS Score Components -->
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Consciousness Level (0-3)</label>
+                                    <input type="number" class="form-control nihss-input" name="consciousness_level" min="0" max="3" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Consciousness Questions (0-2)</label>
+                                    <input type="number" class="form-control nihss-input" name="consciousness_questions" min="0" max="2" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Consciousness Commands (0-2)</label>
+                                    <input type="number" class="form-control nihss-input" name="consciousness_commands" min="0" max="2" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Gaze (0-2)</label>
+                                    <input type="number" class="form-control nihss-input" name="gaze" min="0" max="2" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Visual Fields (0-3)</label>
+                                    <input type="number" class="form-control nihss-input" name="visual_fields" min="0" max="3" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Facial Palsy (0-3)</label>
+                                    <input type="number" class="form-control nihss-input" name="facial_palsy" min="0" max="3" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Left Arm Motor (0-4)</label>
+                                    <input type="number" class="form-control nihss-input" name="left_arm_motor" min="0" max="4" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Right Arm Motor (0-4)</label>
+                                    <input type="number" class="form-control nihss-input" name="right_arm_motor" min="0" max="4" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Left Leg Motor (0-4)</label>
+                                    <input type="number" class="form-control nihss-input" name="left_leg_motor" min="0" max="4" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Right Leg Motor (0-4)</label>
+                                    <input type="number" class="form-control nihss-input" name="right_leg_motor" min="0" max="4" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Limb Ataxia (0-2)</label>
+                                    <input type="number" class="form-control nihss-input" name="limb_ataxia" min="0" max="2" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Sensory (0-2)</label>
+                                    <input type="number" class="form-control nihss-input" name="sensory" min="0" max="2" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Language (0-3)</label>
+                                    <input type="number" class="form-control nihss-input" name="language" min="0" max="3" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Dysarthria (0-2)</label>
+                                    <input type="number" class="form-control nihss-input" name="dysarthria" min="0" max="2" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Extinction (0-2)</label>
+                                    <input type="number" class="form-control nihss-input" name="extinction" min="0" max="2" required>
+                                </div>
                             </div>
-                            <button type="submit" name="update_nihss" class="btn btn-primary">Save NIHSS</button>
+                            
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-secondary me-2" id="generateScoreBtn">Generate Score</button>
+                                <button type="submit" name="update_nihss" class="btn btn-primary">Save NIHSS</button>
+                            </div>
+
+                            <div class="mt-3" id="nihssResult" style="display: none;">
+                                <div class="alert alert-info">
+                                    <strong>Total NIHSS Score: <span id="totalScore">0</span></strong>
+                                    <br>
+                                    <span id="severityLevel"></span>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <label for="nihss" class="form-label">Additional Notes</label>
+                                <textarea class="form-control" id="nihss" name="nihss" rows="4">{{ patient.nihss }}</textarea>
+                                <div class="form-text">Enter any additional notes about the NIHSS assessment.</div>
+                            </div>
                         </form>
                     </div>
 

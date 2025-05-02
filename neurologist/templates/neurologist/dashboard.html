@@ -3,17 +3,7 @@
 {% block title %}Neurologist Dashboard - {{ block.super }}{% endblock %}
 
 {% block extra_css %}
-<style>
-    .critical-alert {
-        animation: pulse-bg 2s infinite;
-    }
-    
-    @keyframes pulse-bg {
-        0% { background-color: rgba(220, 53, 69, 0.1); }
-        50% { background-color: rgba(220, 53, 69, 0.2); }
-        100% { background-color: rgba(220, 53, 69, 0.1); }
-    }
-    
+    <style>
     .nihss-badge {
         font-size: 1rem;
         padding: 0.5rem;
@@ -23,22 +13,132 @@
     .nihss-moderate { background-color: #ffc107; color: #000; }
     .nihss-severe { background-color: #dc3545; }
     .nihss-very-severe { background-color: #6c1827; }
+    
+    .nihss-score {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    
+    .nihss-mild { color: #28a745; }
+    .nihss-moderate { color: #ffc107; }
+    .nihss-severe { color: #dc3545; }
+    .nihss-very-severe { color: #6c1827; }
+    
+    .critical-alert {
+        position: relative;
+        overflow: hidden;
+        animation: shake 0.5s ease-in-out infinite;
+    }
+    
+    .critical-alert::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            to right,
+            transparent 0%,
+            rgba(220, 53, 69, 0.2) 50%,
+            transparent 100%
+        );
+        animation: shine 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-2px); }
+        75% { transform: translateX(2px); }
+    }
+    
+    @keyframes shine {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+    
+    .critical-badge {
+        position: relative;
+        animation: pulse-scale 1s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-scale {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    .critical-icon {
+        animation: rotate 1s ease-in-out infinite;
+    }
+    
+    @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        25% { transform: rotate(-10deg); }
+        75% { transform: rotate(10deg); }
+        100% { transform: rotate(0deg); }
+    }
+    
+    .treatment-history {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .critical-alert-banner {
+        background: linear-gradient(
+            45deg,
+            #dc3545 25%,
+            #b02a37 25%,
+            #b02a37 50%,
+            #dc3545 50%,
+            #dc3545 75%,
+            #b02a37 75%,
+            #b02a37 100%
+        );
+        background-size: 56.57px 56.57px;
+        animation: move-stripes 2s linear infinite;
+    }
+    
+    @keyframes move-stripes {
+        0% { background-position: 0 0; }
+        100% { background-position: 56.57px 0; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <h2>Neurologist Dashboard</h2>
+
+    <!-- Alerts Section -->
+    {% if messages %}
+    <div class="alerts-section mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     
     <!-- Critical Alerts Section -->
     {% if critical_patients %}
-    <div class="card border-danger mb-4">
-        <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                Critical Patients Requiring Immediate Attention
+    <div class="card mb-4 border-0 emergency-pulse">
+        <div class="card-header emergency-header emergency-stripes text-white d-flex justify-content-between align-items-center p-3">
+            <h5 class="mb-0 d-flex align-items-center emergency-shake">
+                <i class="fas fa-exclamation-triangle me-2 fa-2x"></i>
+                <span class="text-uppercase fw-bold fs-4">
+                    ⚠️ EMERGENCY: CRITICAL PATIENTS
+                    <small class="d-block text-warning">IMMEDIATE ACTION REQUIRED</small>
+                </span>
             </h5>
-            <span class="badge bg-white text-danger">{{ critical_patients|length }}</span>
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-center">
+                    <div class="fs-2 fw-bold emergency-shake">{{ critical_patients|length }}</div>
+                    <small class="text-uppercase">Critical Cases</small>
+                </div>
+                <i class="fas fa-ambulance fa-2x emergency-shake"></i>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -53,7 +153,11 @@
                     </thead>
                     <tbody>
                         {% for patient in critical_patients %}
-                        <tr class="critical-alert">
+                        <tr class="emergency-pulse" style="background-color: rgba(220, 53, 69, 0.1);">
+                            <td class="position-relative">
+                                <div class="position-absolute" style="left: -10px; top: 50%; transform: translateY(-50%);">
+                                    <i class="fas fa-exclamation-circle text-danger fa-lg emergency-shake"></i>
+                                </div>
                             <td>
                                 <strong>{{ patient.first_name }} {{ patient.last_name }}</strong><br>
                                 <small class="text-muted">Age: {{ patient.age }}, Gender: {{ patient.get_gender_display }}</small>
@@ -69,6 +173,7 @@
                                     NIHSS: {{ score }}
                                 </span>
                                 {% endif %}
+                                {% endwith %}
                             </td>
                             <td>
                                 <ul class="list-unstyled mb-0">

@@ -26,6 +26,10 @@ def dashboard(request):
     
     critical_patients = [p for p in critical_patients if p.is_critical()]
     
+    # Add alert message if there are critical patients
+    if critical_patients:
+        messages.warning(request, f'There are {len(critical_patients)} critical patients requiring immediate attention!')
+    
     # Get active consultations
     active_consultations = Consultation.objects.filter(
         neurologist=request.user,

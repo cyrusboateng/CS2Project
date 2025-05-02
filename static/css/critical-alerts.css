@@ -1,0 +1,72 @@
+/* Critical Alert Animations */
+@keyframes pulse-bg {
+    0%, 100% { background-color: rgba(220, 53, 69, 0.1); }
+    50% { background-color: rgba(220, 53, 69, 0.2); }
+}
+
+@keyframes emergency-flash {
+    0%, 100% { background-color: #dc3545; }
+    50% { background-color: #b02a37; }
+}
+
+@keyframes siren-light {
+    0% { box-shadow: 0 0 20px #dc3545; }
+    50% { box-shadow: 0 0 40px #dc3545; }
+    100% { box-shadow: 0 0 20px #dc3545; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px) rotate(-1deg); }
+    75% { transform: translateX(5px) rotate(1deg); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Critical Alert Styles */
+.emergency-header {
+    background: #dc3545;
+    animation: emergency-flash 1s infinite;
+    box-shadow: 0 0 20px #dc3545;
+    animation: siren-light 1s infinite;
+}
+
+.emergency-stripes {
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 0, 0, 0.1) 10px,
+        rgba(0, 0, 0, 0.1) 20px
+    );
+}
+
+.emergency-shake {
+    animation: shake 0.5s infinite;
+}
+
+.emergency-pulse {
+    animation: pulse 1s infinite;
+}
+
+/* Toast Overrides for Critical Alerts */
+.toast.emergency-pulse {
+    border: none !important;
+    box-shadow: 0 0.5rem 1rem rgba(220, 53, 69, 0.15);
+}
+
+.toast .emergency-header {
+    color: white;
+}
+
+.toast .emergency-header .btn-close-white {
+    opacity: 0.8;
+}
+
+.toast .emergency-header .btn-close-white:hover {
+    opacity: 1;
+}

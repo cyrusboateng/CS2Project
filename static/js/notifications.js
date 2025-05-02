@@ -28,20 +28,92 @@ function initAudioContext() {
 function playAlertSound() {
     if (!audioContext) return;
     
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    // Create oscillators for a more intense siren sound
+    const oscillators = [];
+    const gainNodes = [];
     
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    // Create multiple oscillators for a richer sound
+    for (let i = 0; i < 3; i++) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillators.push(oscillator);
+        gainNodes.push(gainNode);
+    }
     
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
+    // High-pitched siren
+    oscillators[0].type = 'sawtooth';
+    oscillators[0].frequency.setValueAtTime(880, audioContext.currentTime);
+    oscillators[0].frequency.linearRampToValueAtTime(1760, audioContext.currentTime + 0.25);
+    oscillators[0].frequency.linearRampToValueAtTime(880, audioContext.currentTime + 0.5);
     
-    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    // Mid-range harmonics
+    oscillators[1].type = 'square';
+    oscillators[1].frequency.setValueAtTime(440, audioContext.currentTime);
+    oscillators[1].frequency.linearRampToValueAtTime(880, audioContext.currentTime + 0.25);
+    oscillators[1].frequency.linearRampToValueAtTime(440, audioContext.currentTime + 0.5);
     
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.5);
+    // Low-frequency punch
+    oscillators[2].type = 'triangle';
+    oscillators[2].frequency.setValueAtTime(220, audioContext.currentTime);
+    oscillators[2].frequency.linearRampToValueAtTime(110, audioContext.currentTime + 0.5);
+    
+    // Volume envelopes
+    gainNodes.forEach((gainNode, i) => {
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.2 / (i + 1), audioContext.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.2 / (i + 1), audioContext.currentTime + 0.4);
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+    });
+    
+    // Play all oscillators
+    oscillators.forEach(osc => osc.start(audioContext.currentTime));
+    oscillators.forEach(osc => osc.stop(audioContext.currentTime + 0.5));
+    
+    // Schedule second siren after a short delay
+    setTimeout(() => {
+        const oscillators2 = [];
+        const gainNodes2 = [];
+        
+        for (let i = 0; i < 3; i++) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillators2.push(oscillator);
+            gainNodes2.push(gainNode);
+        }
+        
+        // Reverse siren sweep
+        oscillators2[0].type = 'sawtooth';
+        oscillators2[0].frequency.setValueAtTime(1760, audioContext.currentTime);
+        oscillators2[0].frequency.linearRampToValueAtTime(880, audioContext.currentTime + 0.25);
+        oscillators2[0].frequency.linearRampToValueAtTime(1760, audioContext.currentTime + 0.5);
+        
+        oscillators2[1].type = 'square';
+        oscillators2[1].frequency.setValueAtTime(880, audioContext.currentTime);
+        oscillators2[1].frequency.linearRampToValueAtTime(440, audioContext.currentTime + 0.25);
+        oscillators2[1].frequency.linearRampToValueAtTime(880, audioContext.currentTime + 0.5);
+        
+        oscillators2[2].type = 'triangle';
+        oscillators2[2].frequency.setValueAtTime(110, audioContext.currentTime);
+        oscillators2[2].frequency.linearRampToValueAtTime(220, audioContext.currentTime + 0.5);
+        
+        gainNodes2.forEach((gainNode, i) => {
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.2 / (i + 1), audioContext.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.2 / (i + 1), audioContext.currentTime + 0.4);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+        });
+        
+        oscillators2.forEach(osc => osc.start(audioContext.currentTime));
+        oscillators2.forEach(osc => osc.stop(audioContext.currentTime + 0.5));
+    }, 600);
 }
 
 function showNotification(notification) {
@@ -55,32 +127,32 @@ function showNotification(notification) {
     
     // Create notification element
     const toastHtml = `
-        <div class="toast ${isCritical ? 'critical' : ''}" 
+        <div class="toast ${isCritical ? 'emergency-pulse' : ''}" 
              role="alert" 
              aria-live="${isCritical ? 'assertive' : 'polite'}" 
              aria-atomic="true" 
              data-notification-id="${notification.id}">
-            <div class="toast-header">
-                ${isCritical ? '<i class="fas fa-exclamation-triangle me-2"></i>' : ''}
-                <strong class="me-auto">
-                    ${isCritical ? '⚠️ CRITICAL ALERT' : notification.title}
+            <div class="toast-header ${isCritical ? 'emergency-header emergency-stripes' : ''}">
+                ${isCritical ? '<i class="fas fa-exclamation-triangle me-2 emergency-shake"></i>' : ''}
+                <strong class="me-auto text-white">
+                    ${isCritical ? `<span class="fs-5 text-uppercase emergency-shake d-inline-block">⚠️ EMERGENCY ALERT</span>` : notification.title}
                 </strong>
-                <small class="${isCritical ? 'text-white' : 'text-muted'}">just now</small>
+                <small class="text-white-50">just now</small>
                 <button type="button" 
-                        class="btn-close" 
+                        class="btn-close btn-close-white" 
                         data-bs-dismiss="toast" 
                         aria-label="Close"></button>
             </div>
-            <div class="toast-body">
-                ${isCritical ? '<strong>' : ''}
+            <div class="toast-body ${isCritical ? 'bg-danger bg-opacity-10 border-start border-danger border-4' : ''}">
+                ${isCritical ? '<strong class="fs-5">' : ''}
                 ${notification.message}
                 ${isCritical ? '</strong>' : ''}
                 ${notification.link ? 
-                    `<div class="mt-2 pt-2 ${isCritical ? 'border-top border-danger' : 'border-top'}">
+                    `<div class="mt-3 pt-3 ${isCritical ? 'border-top border-danger' : 'border-top'}">
                         <a href="${notification.link}" 
-                           class="btn ${isCritical ? 'btn-danger' : 'btn-primary'} btn-sm">
-                           <i class="fas fa-${isCritical ? 'ambulance' : 'eye'} me-1"></i>
-                           View Patient
+                           class="btn ${isCritical ? 'btn-danger' : 'btn-primary'} ${isCritical ? 'emergency-shake' : ''} w-100">
+                           <i class="fas fa-${isCritical ? 'ambulance' : 'eye'} me-2"></i>
+                           <strong>View Critical Patient</strong>
                         </a>
                     </div>` 
                     : ''}
