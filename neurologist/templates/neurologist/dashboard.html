@@ -124,12 +124,28 @@
     {% if messages %}
     <div class="alerts-section mb-4">
         {% for message in messages %}
-        <div class="alert {% if message.tags == 'error' %}alert-danger critical-alert pulse{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+        <div class="alert {% if message.tags == 'error' %}alert-danger critical-alert pulse{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show persistent-alert" role="alert" data-message="{{ message|escapejs }}">
             {% if message.tags == 'error' %}
             <i class="fas fa-exclamation-triangle me-2"></i>
             {% endif %}
             {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close alert-close-btn" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Notification Alerts Section -->
+    {% if dashboard_notifications %}
+    <div class="alerts-section mb-4">
+        {% for notification in dashboard_notifications %}
+        <div class="alert {% if notification.notification_type == 'critical' %}alert-danger critical-alert pulse{% elif notification.notification_type == 'info' %}alert-info{% elif notification.notification_type == 'warning' %}alert-warning{% else %}alert-success{% endif %} alert-dismissible fade show persistent-alert" role="alert" data-notification-id="{{ notification.id }}">
+            {% if notification.notification_type == 'critical' %}
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {% endif %}
+            <strong>{{ notification.title }}</strong>
+            <div>{{ notification.message }}</div>
+            <button type="button" class="btn-close alert-close-btn" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endfor %}
     </div>

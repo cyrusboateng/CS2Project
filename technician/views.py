@@ -66,16 +66,14 @@ def patient_create(request):
             
             patient.save()
             
-            # Send notification to neurologists if submitted
+            # Notify all neurologists for all submissions (critical and non-critical)
             if action == 'submit':
                 neurologist_group = Group.objects.get(name='Neurologist')
                 for neurologist in neurologist_group.user_set.all():
-                    # Send critical notification if patient has critical indicators
-                    notification_type = 'critical' if patient.is_critical() else 'update'
+                    notification_type = 'critical' if patient.is_critical() else 'info'
                     message = f'A new patient case has been submitted by {request.user.get_full_name() or request.user.username}.'
                     if patient.is_critical():
                         message += ' ⚠️ This patient requires immediate attention!'
-                    
                     send_notification(
                         user=neurologist,
                         notification_type=notification_type,
@@ -231,14 +229,22 @@ def patient_delete(request, pk):
         was_critical = patient.is_critical()
         
         # If patient was critical, notify neurologists about the deletion
-        if was_critical:
-            neurologist_group = Group.objects.get(name='Neurologist')
-            for neurologist in neurologist_group.user_set.all():
+        # Notify all neurologists about patient deletion (critical and non-critical)
+        neurologist_group = Group.objects.get(name='Neurologist')
+        for neurologist in neurologist_group.user_set.all():
+            if was_critical:
+                send_notification(
+                    user=neurologist,
+                    notification_type='critical',
+                    title='Critical Patient Case Removed',
+                    message=f'A critical patient case ({patient_name}) has been removed by {request.user.get_full_name() or request.user.username}.'
+                )
+            else:
                 send_notification(
                     user=neurologist,
                     notification_type='info',
-                    title='Critical Patient Case Removed',
-                    message=f'A critical patient case ({patient_name}) has been removed by {request.user.get_full_name() or request.user.username}.'
+                    title='Patient Case Removed',
+                    message=f'A patient case ({patient_name}) has been removed by {request.user.get_full_name() or request.user.username}.'
                 )
         
         patient.delete()

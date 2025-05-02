@@ -51,10 +51,15 @@ def dashboard(request):
         status='COMPLETED'
     ).select_related('patient').order_by('-updated_at')[:5]
     
+    # Fetch unread notifications for this neurologist
+    from notifications.models import Notification
+    dashboard_notifications = Notification.objects.filter(recipient=request.user, is_read=False).order_by('-created_at')[:10]
+
     context = {
         'critical_patients': critical_patients,
         'active_consultations': active_consultations,
         'completed_consultations': completed_consultations,
+        'dashboard_notifications': dashboard_notifications,
     }
     
     return render(request, 'neurologist/dashboard.html', context)
